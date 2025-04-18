@@ -4,8 +4,8 @@ class User(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100))
-    phone = db.Column(db.String(10))
+    email = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(10), nullable=False)
 
 class LinkedAccount(db.Model):
     __tablename__ = 'Linked_Accounts'
@@ -28,14 +28,14 @@ class Goal(db.Model):
     deadline = db.Column(db.Date, nullable=False)
 
 class TaxInfo(db.Model):
-    __tablename__ = 'TaxInfo'
+    __tablename__ = 'Tax_Info'
     id = db.Column(db.Integer, primary_key=True)
     income1 = db.Column(db.Float, nullable=False)
     # User can have up to five incomes
-    income2 = db.Column(db.Float)
-    income3 = db.Column(db.Float)
-    income4 = db.Column(db.Float)
-    income5 = db.Column(db.Float)
+    income2 = db.Column(db.Float, nullable=False)
+    income3 = db.Column(db.Float, nullable=False)
+    income4 = db.Column(db.Float, nullable=False)
+    income5 = db.Column(db.Float, nullable=False)
     tax_rate = db.Column(db.Integer, nullable=False)
     total_income = db.Column(db.Float, nullable=False)
     tax_to_save = db.Column(db.Float, nullable=False)
