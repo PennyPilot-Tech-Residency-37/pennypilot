@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Button, TextField, Typography, Card, Container, Box } from "@mui/material";
-import { useSpring, animated } from "react-spring";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../types/firebaseConfig";
 import PilotAvatar from "./PilotAvatar";
@@ -11,11 +10,6 @@ export default function BudgetPlanner() {
   const [income, setIncome] = useState<number>(0);
   const [expenses, setExpenses] = useState<number>(0);
   const [saved, setSaved] = useState(false);
-
-  const checkProps = useSpring({
-    opacity: saved ? 1 : 0,
-    from: { opacity: 0 },
-  });
 
   const handleSaveBudget = async () => {
     if (!currentUser) return;
@@ -86,9 +80,9 @@ export default function BudgetPlanner() {
               Generate Budget
             </Button>
             {saved && (
-              <animated.div style={checkProps}>
+              <div style={{ transition: 'opacity 0.5s', opacity: saved ? 1 : 0 }}>
                 <Typography color="green">✓ Budget Set! +20 Pilot Points</Typography>
-              </animated.div>
+              </div>
             )}
           </Card>
         ) : (

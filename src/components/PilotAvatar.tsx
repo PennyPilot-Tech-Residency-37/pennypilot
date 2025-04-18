@@ -1,12 +1,13 @@
 import * as React from "react";
-import { Typography, Paper, Box } from "@mui/material";
-import { useSpring } from "react-spring";
+import { Typography, Paper, Box, SxProps, Theme } from "@mui/material";
+import { useSpring } from "@react-spring/web";
 
 interface PilotAvatarProps {
   message: string;
+  sx?: SxProps<Theme>;
 }
 
-export default function PilotAvatar({ message }: PilotAvatarProps) {
+export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
   const bubbleProps = useSpring({
     from: { opacity: 0, scale: 0.8 },
     to: { opacity: 1, scale: 1 },
@@ -14,7 +15,7 @@ export default function PilotAvatar({ message }: PilotAvatarProps) {
   });
 
   return (
-    <Box sx={{ position: "relative", mb: 4, display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
+    <Box sx={{ position: "relative", mb: 4, display: "flex", justifyContent: "center", alignItems: "center", width: "100%", ...sx }}>
       <Box
         component="img"
         src="/images/pennypilot.png"

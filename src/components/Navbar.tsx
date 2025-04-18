@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -11,37 +11,56 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import { useSpring, animated } from "react-spring";
+import { Link, useLocation } from "react-router-dom";
+import { animated, useSpring } from "@react-spring/web";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAuth } from "../context/auth"; 
 import LoginModal from "./LoginModal";
 import { signOut } from "firebase/auth";
 import { auth } from "../context/auth";
+import { motion } from "framer-motion";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const { currentUser } = useAuth();
+  const location = useLocation();
 
-  // Animation for the logo
   const logoProps = useSpring({
     from: { rotate: 0 },
     to: { rotate: 360 },
     config: { duration: 1000 },
     reset: true,
+    onRest: () => {
+      logoProps.rotate.set(0);
+    }
   });
 
-  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
-  const handleLoginOpen = () => setLoginOpen(true);
+  useEffect(() => {
+    logoProps.rotate.start();
+  }, [location.pathname]);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleLoginOpen = () => {
+    setLoginOpen(true);
+    logoProps.rotate.start();
+  };
   const handleLoginClose = () => setLoginOpen(false);
   const handleLogout = () => signOut(auth);
 
   const navItems = [
-    { label: "Home", path: "/" },
+    { label: "Home", path: currentUser ? "/dashboard" : "/" },
     { label: "Budget", path: "/budget" },
     { label: "Tax Prep", path: "/tax-prep" },
+    { label: "Goals", path: "/goals" },
   ];
+
+  const handleNavClick = () => {
+    logoProps.rotate.start();
+  };
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ width: 250 }}>
@@ -51,6 +70,7 @@ export default function Navbar() {
             key={item.label}
             component={Link}
             to={item.path}
+            onClick={handleNavClick}
             sx={{ color: "inherit", textDecoration: "none" }}
           >
             <ListItemText primary={item.label} />
@@ -85,16 +105,21 @@ export default function Navbar() {
               alignItems: "center",
             }}
           >
-            <animated.img
-              src="/images/PennyPilot-logo.png"
-              alt="Penny Pilot emblem with golden wings and a central P icon."
+            <Box
+              component={animated.div}
               style={{
-                ...logoProps, 
+                transform: logoProps.rotate.to(r => `rotate(${r}deg)`),
                 height: 200,
                 zIndex: 2,
                 pointerEvents: "none",
               }}
-            />
+            >
+              <img
+                src="/images/PennyPilot-logo.png"
+                alt="Penny Pilot emblem with golden wings and a central P icon."
+                style={{ height: "100%" }}
+              />
+            </Box>
           </Box>
           {/* Title */}
           <Typography
@@ -117,6 +142,7 @@ export default function Navbar() {
                 color="inherit"
                 component={Link}
                 to={item.path}
+                onClick={handleNavClick}
                 sx={{ mx: 1 }}
               >
                 {item.label}
