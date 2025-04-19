@@ -13,6 +13,7 @@ class LinkedAccount(db.Model):
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     associated_user = db.Column(db.Integer, db.ForeignKey('Users.id'))
+    user = db.relationship("User", backref="linked_accounts")
 
 class Transaction(db.Model):
     __tablename__ = 'Transactions'
