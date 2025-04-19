@@ -1,0 +1,43 @@
+{
+	"info": {
+		"_postman_id": "69a9caaa-e15c-49ef-a1c6-fffdeb2a8ebc",
+		"name": "linked account",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37692689",
+		"_collection_link": "https://algorithm-alliance.postman.co/workspace/penny_pilot~3a1683d5-fb0d-4248-b02c-41e95803c202/collection/37692689-69a9caaa-e15c-49ef-a1c6-fffdeb2a8ebc?action=share&source=collection_link&creator=37692689"
+	},
+	"item": [
+		{
+			"name": "create account",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "read account",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "update account",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "delete account",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}

@@ -30,4 +30,15 @@ export default [
       ],
     },
   },
+  // ✅ Override for jest.config.js
+  {
+    files: ['jest.config.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.node,
+    },
+    rules: {
+      'no-undef': 'off',
+    },
+  },
 ]

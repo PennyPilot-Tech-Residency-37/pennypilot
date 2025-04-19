@@ -1,0 +1,43 @@
+{
+	"info": {
+		"_postman_id": "670ac04b-45b0-40c2-995f-3bd9f5d30449",
+		"name": "user",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37692689",
+		"_collection_link": "https://algorithm-alliance.postman.co/workspace/penny_pilot~3a1683d5-fb0d-4248-b02c-41e95803c202/collection/37692689-670ac04b-45b0-40c2-995f-3bd9f5d30449?action=share&source=collection_link&creator=37692689"
+	},
+	"item": [
+		{
+			"name": "create user",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "read user",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "update user",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
