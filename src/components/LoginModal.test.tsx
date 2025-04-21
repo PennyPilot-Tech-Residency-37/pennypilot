@@ -138,6 +138,7 @@ it("calls signInWithEmailAndPassword when user logs in", async () => {
     });
 });
 
+// test comment
 // user log in fails test case
 it("displays error when login fails", async () => {
     const mockSignIn = signInWithEmailAndPassword as jest.Mock;
