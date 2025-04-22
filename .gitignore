@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Backend files
 /__pycache__/
 /backend/__pycache__/
 /backend/root_password.py
+/backend/sdk.json
+/backend/setup_cred.py
+/backend/plaid_client_config.py
