@@ -1,4 +1,3 @@
-// BudgetSetup.tsx
 import React, { useState } from "react";
 import {
   Backdrop,
@@ -39,7 +38,7 @@ const BudgetSetup = () => {
   const handleFinish = () => {
     setStep(4);
     setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 10000); // Confetti duration in ms
+    setTimeout(() => setShowConfetti(false), 10000); // confetti duration in milliseconds
   };
 
   const handleAddLine = (type: string) => {
