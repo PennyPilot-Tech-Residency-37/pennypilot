@@ -1,6 +1,7 @@
 import { Container, Typography, Box } from "@mui/material";
 import BudgetGroup from "./BudgetGroup";
 import PilotAvatar from "./PilotAvatar";
+import BudgetSetup from "./BudgetGuide";
 
 const BudgetBoard = () => {
   return (
@@ -21,6 +22,7 @@ const BudgetBoard = () => {
       <Typography variant="h4" gutterBottom>
         Your Budget
       </Typography>
+      <BudgetSetup />
       <BudgetGroup title="Income" />
       <BudgetGroup title="Expenses" />
       <BudgetGroup title="Savings" />
