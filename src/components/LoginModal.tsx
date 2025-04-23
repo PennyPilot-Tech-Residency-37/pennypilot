@@ -9,28 +9,34 @@ import {
   Tab,
 } from "@mui/material";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../context/auth"; // Updated path
+import { auth } from "../context/auth";
 import { IconButton, InputAdornment } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 interface LoginModalProps {
   open: boolean;
   onClose: () => void;
+  intendedPath?: string | null; // Ensure intendedPath is defined
 }
 
-export default function LoginModal({ open, onClose }: LoginModalProps) {
+export default function LoginModal({ open, onClose, intendedPath }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [tab, setTab] = useState(0); // 0 = Login, 1 = Signup
   const [error, setError] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       setError("");
       onClose();
+      if (intendedPath) {
+        navigate(intendedPath); // Navigate to intended path after login
+      }
     } catch (err) {
       setError("Failed to log in. Check your credentials.");
     }
@@ -45,6 +51,9 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
       await createUserWithEmailAndPassword(auth, email, password);
       setError("");
       onClose();
+      if (intendedPath) {
+        navigate(intendedPath); // Navigate to intended path after signup
+      }
     } catch (err) {
       setError("Failed to sign up. Try a different email.");
     }
@@ -65,16 +74,16 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
           borderRadius: 2,
         }}
       >
-        <Tabs 
+        <Tabs
           value={tab}
           onChange={(_, newValue) => {
             setTab(newValue);
             setPassword("");
             setConfirmPassword("");
-            setError("")
+            setError("");
           }}
-            centered
-          >
+          centered
+        >
           <Tab label="Login" />
           <Tab label="Sign Up" />
         </Tabs>

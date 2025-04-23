@@ -11,10 +11,10 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
 import { animated, useSpring } from "@react-spring/web";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useAuth } from "../context/auth"; 
+import { useAuth } from "../context/auth";
 import LoginModal from "./LoginModal";
 import { signOut } from "firebase/auth";
 import { auth } from "../context/auth";
@@ -23,8 +23,10 @@ import { motion } from "framer-motion";
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [intendedPath, setIntendedPath] = useState<string | null>(null); // Track intended path
   const { currentUser } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate(); // For programmatic navigation
 
   const logoProps = useSpring({
     from: { rotate: 0 },
@@ -33,7 +35,7 @@ export default function Navbar() {
     reset: true,
     onRest: () => {
       logoProps.rotate.set(0);
-    }
+    },
   });
 
   useEffect(() => {
@@ -44,12 +46,21 @@ export default function Navbar() {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleLoginOpen = () => {
+  const handleLoginOpen = (path?: string) => {
+    if (path) setIntendedPath(path); // Store the intended path
     setLoginOpen(true);
     logoProps.rotate.start();
   };
-  const handleLoginClose = () => setLoginOpen(false);
-  const handleLogout = () => signOut(auth);
+
+  const handleLoginClose = () => {
+    setLoginOpen(false);
+    setIntendedPath(null); // Clear intended path when modal closes
+  };
+
+  const handleLogout = () => {
+    signOut(auth);
+    navigate("/"); // Redirect to home after logout
+  };
 
   const navItems = [
     { label: "Home", path: currentUser ? "/dashboard" : "/" },
@@ -58,8 +69,15 @@ export default function Navbar() {
     { label: "Goals", path: "/goals" },
   ];
 
-  const handleNavClick = () => {
-    logoProps.rotate.start();
+  const handleNavClick = (path: string) => {
+    if (!currentUser && path !== "/") {
+      // If logged out and not navigating to home, open login modal
+      handleLoginOpen(path);
+    } else {
+      // If logged in, navigate directly and animate logo
+      logoProps.rotate.start();
+      navigate(path);
+    }
   };
 
   const drawer = (
@@ -68,10 +86,8 @@ export default function Navbar() {
         {navItems.map((item) => (
           <ListItem
             key={item.label}
-            component={Link}
-            to={item.path}
-            onClick={handleNavClick}
-            sx={{ color: "inherit", textDecoration: "none" }}
+            onClick={() => handleNavClick(item.path)} // Use handleNavClick
+            sx={{ color: "inherit", textDecoration: "none", cursor: "pointer" }}
           >
             <ListItemText primary={item.label} />
           </ListItem>
@@ -82,7 +98,7 @@ export default function Navbar() {
               Logout
             </Button>
           ) : (
-            <Button color="inherit" onClick={handleLoginOpen}>
+            <Button color="inherit" onClick={() => handleLoginOpen()}>
               Login
             </Button>
           )}
@@ -108,7 +124,7 @@ export default function Navbar() {
             <Box
               component={animated.div}
               style={{
-                transform: logoProps.rotate.to(r => `rotate(${r}deg)`),
+                transform: logoProps.rotate.to((r) => `rotate(${r}deg)`),
                 height: 200,
                 zIndex: 2,
                 pointerEvents: "none",
@@ -140,9 +156,7 @@ export default function Navbar() {
               <Button
                 key={item.label}
                 color="inherit"
-                component={Link}
-                to={item.path}
-                onClick={handleNavClick}
+                onClick={() => handleNavClick(item.path)} // Use handleNavClick
                 sx={{ mx: 1 }}
               >
                 {item.label}
@@ -153,7 +167,7 @@ export default function Navbar() {
                 Logout
               </Button>
             ) : (
-              <Button color="inherit" onClick={handleLoginOpen}>
+              <Button color="inherit" onClick={() => handleLoginOpen()}>
                 Login
               </Button>
             )}
@@ -179,7 +193,7 @@ export default function Navbar() {
         {drawer}
       </Drawer>
       {/* Login Modal */}
-      <LoginModal open={loginOpen} onClose={handleLoginClose} />
+      <LoginModal open={loginOpen} onClose={handleLoginClose} intendedPath={intendedPath} />
       {/* Spacer */}
       <Box sx={{ height: "64px" }} />
     </>
