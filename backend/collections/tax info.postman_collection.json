@@ -1,14 +1,14 @@
 {
 	"info": {
-		"_postman_id": "670ac04b-45b0-40c2-995f-3bd9f5d30449",
-		"name": "user",
+		"_postman_id": "0233d4d0-591a-4b98-86a1-45f494b14331",
+		"name": "tax info",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "37692689",
-		"_collection_link": "https://algorithm-alliance.postman.co/workspace/penny_pilot~3a1683d5-fb0d-4248-b02c-41e95803c202/collection/37692689-670ac04b-45b0-40c2-995f-3bd9f5d30449?action=share&source=collection_link&creator=37692689"
+		"_collection_link": "https://algorithm-alliance.postman.co/workspace/penny_pilot~3a1683d5-fb0d-4248-b02c-41e95803c202/collection/37692689-0233d4d0-591a-4b98-86a1-45f494b14331?action=share&source=collection_link&creator=37692689"
 	},
 	"item": [
 		{
-			"name": "create user",
+			"name": "create tax info",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -20,7 +20,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"John Doe\",\r\n    \"email\": null,\r\n    \"phone\": null\r\n}",
+					"raw": "{\r\n    \"income1\": 50000.00,\r\n    \"income2\": 0,\r\n    \"income3\": 0,\r\n    \"income4\": 0,\r\n    \"income5\": 0,\r\n    \"tax_rate\": 30,\r\n    \"total_income\": 50000.00,\r\n    \"tax_to_save\": 25.00,\r\n    \"total_saved\": 50.50\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -28,7 +28,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:5000/users",
+					"raw": "http://127.0.0.1:5000/tax_info",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -38,37 +38,22 @@
 					],
 					"port": "5000",
 					"path": [
-						"users"
+						"tax_info"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "read user",
+			"name": "read tax info",
 			"request": {
 				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:5000/users/3",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "5000",
-					"path": [
-						"users",
-						"3"
-					]
-				}
+				"header": []
 			},
 			"response": []
 		},
 		{
-			"name": "update user",
+			"name": "update tax info",
 			"request": {
 				"method": "PUT",
 				"header": [
@@ -80,7 +65,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"Jane Doe\",\r\n    \"email\": \"janedoe@gmail.com\",\r\n    \"phone\": \"0987654321\"\r\n}",
+					"raw": "{\r\n    \"income1\": 40000.00,\r\n    \"income2\": 0,\r\n    \"income3\": 0,\r\n    \"income4\": 0,\r\n    \"income5\": 0,\r\n    \"tax_rate\": 30,\r\n    \"total_income\": 40000.00,\r\n    \"tax_to_save\": 25.00,\r\n    \"total_saved\": 50.50\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -88,7 +73,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:5000/users/1",
+					"raw": "http://127.0.0.1:5000/tax_info/1",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -98,7 +83,7 @@
 					],
 					"port": "5000",
 					"path": [
-						"users",
+						"tax_info",
 						"1"
 					]
 				}
@@ -111,7 +96,7 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "http://127.0.0.1:5000/users/1",
+					"raw": "http://127.0.0.1:5000/tax_info/1",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -121,7 +106,7 @@
 					],
 					"port": "5000",
 					"path": [
-						"users",
+						"tax_info",
 						"1"
 					]
 				}
