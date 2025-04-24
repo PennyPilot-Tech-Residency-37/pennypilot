@@ -13,6 +13,7 @@ class LinkedAccount(db.Model):
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     associated_user = db.Column(db.Integer, db.ForeignKey('Users.id'))
+    
 '''
 class Transaction(db.Model):
     __tablename__ = 'Transactions'
@@ -41,6 +42,40 @@ class TaxInfo(db.Model):
     total_income = db.Column(db.Float, nullable=False)
     tax_to_save = db.Column(db.Float, nullable=False)
     total_saved = db.Column(db.Float, nullable=False)
+
+class Income(db.Model):
+    __tablename__ = 'Income'
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Float, nullable=False)
+    source = db.Column(db.String(100), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(1000))
+# I'm guessing the description should be allowed to be empty, need to fix this if I'm wrong.
+
+class Expenses(db.Model):
+    __tablename__ = 'Expenses'
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(100), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(1000))
+# Here too.
+
+class Savings(db.Model):
+    __tablename__ = 'Savings'
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Float, nullable=False)
+    goal_name = db.Column(db.String(100), nullable=False)
+    target_amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.Date, nullable=False)
+
+class Budget(db.Model):
+    __tablename__ = 'Budget'
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(100), nullable=False)
+    target_amount = db.Column(db.Float, nullable=False)
+    month = db.Column(db.String(3), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
 
 # Creating tables
 

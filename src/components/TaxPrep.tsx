@@ -8,7 +8,7 @@ import {
   Container,
   Box,
 } from "@mui/material";
-import { useSpring, animated } from "react-spring";
+import { animated, useSpring } from "@react-spring/web";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../types/firebaseConfig";
 import PilotAvatar from "./PilotAvatar";
@@ -87,7 +87,7 @@ export default function TaxPrep() {
             <Card sx={{ p: 2, width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" } }}>
               <Typography>Tax Savings Progress</Typography>
               <LinearProgress variant="determinate" value={(taxSaved / 1000) * 100} />
-              <animated.div>{props.number.to((n) => `$${n.toFixed(2)} Saved`)}</animated.div>
+              <Typography sx={{ mt: 1 }}>${taxSaved.toFixed(2)} Saved</Typography>
             </Card>
           </>
         ) : (
