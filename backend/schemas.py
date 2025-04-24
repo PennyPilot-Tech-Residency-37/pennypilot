@@ -86,7 +86,7 @@ class BudgetSchema(ma.Schema):
 
 user_schema = UserSchema()
 linked_account_schema = LinkedAccountSchema()
-transaction_schema = TransactionSchema()
+# transaction_schema = TransactionSchema()
 goal_schema = GoalSchema()
 tax_info_schema = TaxInfoSchema()
 income_schema = IncomeSchema()
