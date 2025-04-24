@@ -15,6 +15,7 @@ class LinkedAccount(db.Model):
     associated_user = db.Column(db.Integer, db.ForeignKey('Users.id'))
     
 '''
+user = db.relationship('User', backref='linked_account')
 class Transaction(db.Model):
     __tablename__ = 'Transactions'
     id = db.Column(db.Integer, primary_key=True)
