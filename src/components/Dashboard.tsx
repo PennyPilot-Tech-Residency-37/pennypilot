@@ -49,7 +49,7 @@ export default function HomeDashboard() {
               <LinearProgress variant="determinate" value={userData.budgetSet ? 100 : 0} />
             </Card>
             <Card sx={{ p: 2, width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" } }}>
-              <Typography>Tax Savings</Typography>
+              <Typography>Tax Deduction Progress</Typography>
               <LinearProgress variant="determinate" value={(userData.taxSavings / 1000) * 100} />
             </Card>
           </>

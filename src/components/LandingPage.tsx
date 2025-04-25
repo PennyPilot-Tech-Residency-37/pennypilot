@@ -14,6 +14,12 @@ import { useAuth } from "../context/auth";
 import LoginModal from "./LoginModal";
 import PilotAvatar from "./PilotAvatar";
 
+const formatUserName = (email: string | null | undefined) => {
+  if (!email) return '';
+  const name = email.split("@")[0];
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
 const LandingPage = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -111,7 +117,7 @@ const LandingPage = () => {
             <PilotAvatar
               message={
                 currentUser
-                  ? `Ready for takeoff, ${currentUser.email?.split("@")[0]}?`
+                  ? `Ready for takeoff, ${formatUserName(currentUser.email)}?`
                   : "Ready for takeoff? Log in to fly!"
               }
               sx={{ zIndex: 2 }}
