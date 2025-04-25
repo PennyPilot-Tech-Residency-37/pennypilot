@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
 import LoginModal from "./LoginModal";
 import PilotAvatar from "./PilotAvatar";
+import { Theme,alpha } from '@mui/material/styles';
 
 const formatUserName = (email: string | null | undefined) => {
   if (!email) return '';
@@ -77,6 +78,32 @@ const LandingPage = () => {
     } else {
       handleLoginOpen();
     }
+  };
+
+  const cardStyle = {
+    p: 3,
+    mb: 4,
+    width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" },
+    transition: 'all 0.3s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-4px)',
+      boxShadow: (theme: Theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+    },
+    border: '1px solid',
+    borderColor: (theme: Theme) => alpha(theme.palette.primary.main, 0.1),
+    borderRadius: 2,
+    background: (theme: Theme) => `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+  };
+
+  const buttonStyle = {
+    fontWeight: "bold",
+    transition: 'all 0.2s ease-in-out',
+    '&:active': {
+      transform: 'scale(0.95)',
+    },
+    '&:hover': {
+      boxShadow: (theme: Theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+    },
   };
 
   return (
@@ -150,17 +177,7 @@ const LandingPage = () => {
           </Typography>
 
           {/* Welcome Section */}
-          <Card
-            sx={{
-              p: 3,
-              mb: 4,
-              width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" },
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              textAlign: "center",
-              boxShadow: 6,
-              borderRadius: 4,
-            }}
-          >
+          <Card sx={cardStyle}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Welcome, Captain! Your Flight Path:
@@ -178,7 +195,7 @@ const LandingPage = () => {
                     variant="contained"
                     color="primary"
                     onClick={handleLoginOpen}
-                    sx={{ fontWeight: "bold" }}
+                    sx={buttonStyle}
                   >
                     + Log In
                   </Button>
@@ -188,17 +205,7 @@ const LandingPage = () => {
           </Card>
 
           {/* Budget Planner */}
-          <Card
-            sx={{
-              p: 3,
-              mb: 4,
-              width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" },
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              textAlign: "center",
-              boxShadow: 6,
-              borderRadius: 4,
-            }}
-          >
+          <Card sx={cardStyle}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Budget Planner
@@ -213,7 +220,7 @@ const LandingPage = () => {
                 variant="contained"
                 color="primary"
                 onClick={() => handleNavigation("/budget")}
-                sx={{ fontWeight: "bold" }}
+                sx={buttonStyle}
               >
                 + Start Budgeting
               </Button>
@@ -221,17 +228,7 @@ const LandingPage = () => {
           </Card>
 
           {/* Tax Prep */}
-          <Card
-            sx={{
-              p: 3,
-              mb: 4,
-              width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" },
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              textAlign: "center",
-              boxShadow: 6,
-              borderRadius: 4,
-            }}
-          >
+          <Card sx={cardStyle}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Tax Preparation
@@ -246,7 +243,7 @@ const LandingPage = () => {
                 variant="contained"
                 color="primary"
                 onClick={() => handleNavigation("/tax-prep")}
-                sx={{ fontWeight: "bold" }}
+                sx={buttonStyle}
               >
                 + Tax Prep
               </Button>
@@ -254,17 +251,7 @@ const LandingPage = () => {
           </Card>
 
           {/* Financial Goals */}
-          <Card
-            sx={{
-              p: 3,
-              mb: 4,
-              width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" },
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              textAlign: "center",
-              boxShadow: 6,
-              borderRadius: 4,
-            }}
-          >
+          <Card sx={cardStyle}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Financial Goals
@@ -279,7 +266,7 @@ const LandingPage = () => {
                 variant="contained"
                 color="primary"
                 onClick={() => handleNavigation("/goals")}
-                sx={{ fontWeight: "bold" }}
+                sx={buttonStyle}
               >
                 + Goals
               </Button>
