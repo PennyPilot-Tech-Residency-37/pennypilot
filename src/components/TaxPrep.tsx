@@ -15,6 +15,7 @@ import {
   TableCell,
   Snackbar,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -22,320 +23,334 @@ import { useAuth } from "../context/auth";
 import { useNavigate } from "react-router-dom";
 import PilotAvatar from "./PilotAvatar";
 import { db } from "../types/firebaseConfig";
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { 
+  collection, 
+  addDoc, 
+  getDocs, 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  orderBy, 
+  limit, 
+  onSnapshot 
+} from "firebase/firestore";
+import { SelectChangeEvent } from "@mui/material";
+
+interface DeductibleExpense {
+  id?: string;
+  deductibleAmount: number;
+  category: string;
+  notes: string;
+  createdAt: string;
+}
+
+const formatUserName = (user: any) => {
+  if (!user) return '';
+  return user.displayName || user.email?.split('@')[0] || '';
+};
 
 export default function TaxPrep() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // State for deductible expenses form
-  const [deductibleAmount, setDeductibleAmount] = useState<number | "">("");
-  const [deductibleCategory, setDeductibleCategory] = useState<string>("");
-  const [deductibleCustomCategory, setDeductibleCustomCategory] = useState<string>("");
-  const [deductibleNotes, setDeductibleNotes] = useState<string>("");
-
-  // State for deductible expenses list and totals
-  const [deductibleExpenses, setDeductibleExpenses] = useState<any[]>([]);
+  // Form state
+  const initialFormState = {
+    deductibleAmount: "",
+    category: "",
+    customCategory: "",
+    notes: "",
+  };
+  const [formData, setFormData] = useState(initialFormState);
+  
+  // App state
+  const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>([]);
   const [totalDeductibleSpent, setTotalDeductibleSpent] = useState<number>(0);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
-  const [editingDeductibleId, setEditingDeductibleId] = useState<string | null>(null);
-  const [isSavingDeductible, setIsSavingDeductible] = useState<boolean>(false);
-  const [deductibleFormResetKey, setDeductibleFormResetKey] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+
+  // Predefined categories
+  const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Other"];
 
   useEffect(() => {
     if (!currentUser) {
       navigate("/");
-      setError("Please log in to continue.");
       return;
     }
 
-    const fetchDeductibleExpenses = async () => {
-      try {
-        const userDeductibleRef = collection(db, "users", currentUser.uid, "deductibleExpenses");
-        const snapshot = await getDocs(userDeductibleRef);
-        const expenses = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setDeductibleExpenses(expenses);
-        const totalSpent = expenses.reduce((sum: number, expense: any) => sum + (expense.deductibleAmount || 0), 0);
-        setTotalDeductibleSpent(totalSpent);
-      } catch (err) {
-        setError("Failed to fetch deductible expenses. Please try again.");
+    // Set up real-time listener
+    const userDeductibleRef = collection(db, "users", currentUser.uid, "deductibleExpenses");
+    const q = query(
+      userDeductibleRef,
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribeListener = onSnapshot(q, (snapshot) => {
+      const expenses = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      })) as DeductibleExpense[];
+      
+      setDeductibleExpenses(expenses);
+      calculateTotal(expenses);
+      setIsLoading(false);
+    }, (error) => {
+      console.error('Error fetching expenses:', error);
+      setError("Failed to fetch expenses. Please try again.");
+      setIsLoading(false);
+    });
+
+    setUnsubscribe(() => unsubscribeListener);
+
+    // Cleanup listener on unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
       }
     };
-
-    // Note: fetchTransactions is commented out as per backend requirements
-    /*
-    const fetchTransactions = async () => {
-      try {
-        const response = await axios.post(
-          "https://api.pennypilot.com/get-plaid-transactions",
-          { user_id: currentUser.uid, categories: ["Charitable Donations", "Business Expenses", "Medical Expenses"] },
-          { headers: { Authorization: `Bearer ${idToken}` } }
-        );
-        setTransactions(response.data.transactions);
-      } catch (err) {
-        setError("Unable to load transactions. Check your connection.");
-      }
-    };
-    fetchTransactions();
-    */
-
-    fetchDeductibleExpenses();
-    const interval = setInterval(fetchDeductibleExpenses, 10000);
-    return () => clearInterval(interval);
   }, [currentUser, navigate]);
 
-  const handleEditDeductible = (expense: any) => {
-    setEditingDeductibleId(expense.id);
-    setDeductibleAmount(expense.deductibleAmount);
-    const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses"];
-    if (predefinedCategories.includes(expense.category)) {
-      setDeductibleCategory(expense.category);
-      setDeductibleCustomCategory("");
-    } else {
-      setDeductibleCategory("Other");
-      setDeductibleCustomCategory(expense.category);
-    }
-    setDeductibleNotes(expense.notes || "");
+  const calculateTotal = (expenses: DeductibleExpense[]) => {
+    const total = expenses.reduce((sum, expense) => sum + Number(expense.deductibleAmount), 0);
+    setTotalDeductibleSpent(total);
   };
 
-  const handleDeleteDeductible = async (expenseId: string) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name as string]: value
+    }));
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setEditingId(null);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!currentUser) return;
+    setIsLoading(true);
+
+    const amount = Number(formData.deductibleAmount);
+    if (!amount || amount <= 0) {
+      setError("Please enter a valid amount.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.category) {
+      setError("Please select a category.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const expenseRef = doc(db, "users", currentUser.uid, "deductibleExpenses", expenseId);
-      await deleteDoc(expenseRef);
-      const userDeductibleRef = collection(db, "users", currentUser.uid, "deductibleExpenses");
-      const snapshot = await getDocs(userDeductibleRef);
-      const expenses = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setDeductibleExpenses(expenses);
-      const totalSpent = expenses.reduce((sum: number, expense: any) => sum + (expense.deductibleAmount || 0), 0);
-      setTotalDeductibleSpent(totalSpent);
-    } catch (err) {
-      setError("Failed to delete deductible expense. Please try again.");
-    }
-  };
+      const finalCategory = formData.category === "Other" ? formData.customCategory : formData.category;
+      const expenseData = {
+        deductibleAmount: amount,
+        category: finalCategory,
+        notes: formData.notes,
+        createdAt: new Date().toISOString(),
+      };
 
-  const resetDeductibleForm = () => {
-    setDeductibleAmount("");
-    setDeductibleCategory("");
-    setDeductibleCustomCategory("");
-    setDeductibleNotes("");
-    setEditingDeductibleId(null);
-    setDeductibleFormResetKey(Date.now()); // Forces re-render to clear fields
-  };
-
-  const handleSaveDeductible = async () => {
-    if (!currentUser || isSavingDeductible) return;
-
-    // Clear form immediately for new submissions
-    if (!editingDeductibleId) {
-      resetDeductibleForm();
-    }
-
-    if (deductibleAmount === "" || deductibleAmount <= 0) {
-      setError("Deductible amount must be a positive number greater than 0.");
-      return;
-    }
-    if (!deductibleCategory) {
-      setError("Please select a tax category for the deductible expense.");
-      return;
-    }
-    if (deductibleCategory === "Other" && !deductibleCustomCategory) {
-      setError("Please enter a custom category for the deductible expense.");
-      return;
-    }
-
-    setIsSavingDeductible(true);
-    try {
-      const finalCategory = deductibleCategory === "Other" ? deductibleCustomCategory : deductibleCategory;
       const userDeductibleRef = collection(db, "users", currentUser.uid, "deductibleExpenses");
 
-      if (editingDeductibleId) {
-        const expenseRef = doc(db, "users", currentUser.uid, "deductibleExpenses", editingDeductibleId);
-        await updateDoc(expenseRef, {
-          deductibleAmount,
-          category: finalCategory,
-          notes: deductibleNotes,
-          createdAt: new Date().toISOString(),
-        });
-        resetDeductibleForm(); // Clear form after successful edit
+      // Reset form immediately after validation but before the save operation
+      setFormData(initialFormState);
+      
+      if (editingId) {
+        const expenseRef = doc(db, "users", currentUser.uid, "deductibleExpenses", editingId);
+        await updateDoc(expenseRef, expenseData);
+        setEditingId(null);
       } else {
-        await addDoc(userDeductibleRef, {
-          deductibleAmount,
-          category: finalCategory,
-          notes: deductibleNotes,
-          createdAt: new Date().toISOString(),
-        });
+        await addDoc(userDeductibleRef, expenseData);
       }
 
-      const snapshot = await getDocs(userDeductibleRef);
-      const expenses = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setDeductibleExpenses(expenses);
-      const totalSpent = expenses.reduce((sum: number, expense: any) => sum + (expense.deductibleAmount || 0), 0);
-      setTotalDeductibleSpent(totalSpent);
-
-      setSuccess(editingDeductibleId ? "Deductible expense updated successfully!" : "Deductible expense logged successfully!");
-
-      // Backend API call (commented out for Plaid API)
-      /*
-      await axios.post(
-        "https://api.pennypilot.com/add-entry",
-        {
-          user_id: currentUser.uid,
-          collection_name: "deductibleExpenses",
-          data: { deductibleAmount, category: finalCategory, notes: deductibleNotes },
-        },
-        { headers: { Authorization: `Bearer ${idToken}` } }
-      );
-      const response = await axios.post(
-        "https://api.pennypilot.com/get-entries",
-        { user_id: currentUser.uid, collection_name: "deductibleExpenses" },
-        { headers: { Authorization: `Bearer ${idToken}` } }
-      );
-      const expenses = response.data.entries;
-      setDeductibleExpenses(expenses);
-      const totalSpent = expenses.reduce((sum: number, expense: any) => sum + (expense.deductibleAmount || 0), 0);
-      setTotalDeductibleSpent(totalSpent);
-      */
+      setSuccess(editingId ? "Expense updated successfully!" : "Expense added successfully!");
     } catch (err) {
-      setError("Failed to save deductible expense. Please try again.");
+      // If there's an error, restore the form data
+      setFormData({
+        deductibleAmount: amount.toString(),
+        category: formData.category,
+        customCategory: formData.customCategory,
+        notes: formData.notes
+      });
+      setError("Failed to save expense. Please try again.");
     } finally {
-      setIsSavingDeductible(false);
+      setIsLoading(false);
     }
   };
 
+  const handleEdit = (expense: DeductibleExpense) => {
+    setEditingId(expense.id || null);
+    setFormData({
+      deductibleAmount: expense.deductibleAmount.toString(),
+      category: predefinedCategories.includes(expense.category) ? expense.category : "Other",
+      customCategory: predefinedCategories.includes(expense.category) ? "" : expense.category,
+      notes: expense.notes,
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!currentUser) return;
+
+    try {
+      const expenseRef = doc(db, "users", currentUser.uid, "deductibleExpenses", id);
+      await deleteDoc(expenseRef);
+      setSuccess("Expense deleted successfully!");
+    } catch (err) {
+      setError("Failed to delete expense. Please try again.");
+    }
+  };
+
+  const LoadingSpinner = () => (
+    <Box
+      component="img"
+      src="/images/PennyPilot-logo.png"
+      sx={{
+        position: 'absolute',
+        top: '50%',
+        right: '25%',
+        width: 60,
+        height: 60,
+        transform: 'translateY(-50%)',
+        animation: 'spin 1s linear infinite',
+        '@keyframes spin': {
+          '0%': { transform: 'translateY(-50%) rotate(0deg)' },
+          '100%': { transform: 'translateY(-50%) rotate(360deg)' }
+        }
+      }}
+    />
+  );
+
   return (
-    <Container maxWidth="md" sx={{ mt: 10 }}>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          minHeight: "calc(100vh - 128px)",
-          justifyContent: "center",
-          px: { xs: 2, sm: 0 },
-        }}
-      >
-        <PilotAvatar
-          message={
-            currentUser
-              ? deductibleExpenses.length > 0
-                ? "Deductibles logged, Captain!"
-                : "Log your expenses, Captain!"
-              : "Log in to track expenses!"
-          }
-        />
-        <Typography variant="h5" gutterBottom>
-          Freelancer's Tax Deductible Logbook
-        </Typography>
-        {currentUser ? (
+    <Container maxWidth="md" sx={{ mt: 5 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box sx={{ position: 'relative', mt: 12, mb: 2, pt: 4 }}>
+          <PilotAvatar
+            message={
+              currentUser
+                ? `Track your tax deductions, ${formatUserName(currentUser)}!`
+                : "Log in to track expenses!"
+            }
+          />
+        </Box>
+
+        {currentUser && (
           <>
-            {/* Section: Log Money Spent on Tax-Deductible Items */}
-            <Card sx={{ p: 2, mb: 2, width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" } }}>
-              <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                Log money already spent on tax-deductible items.
+            {/* Entry Form */}
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                {editingId ? "Edit Deductible Expense" : "Add Deductible Expense"}
               </Typography>
-              <TextField
-                key={`deductible-amount-${deductibleFormResetKey}`}
-                label="Amount Spent ($)"
-                type="number"
-                value={deductibleAmount}
-                onChange={(e) => setDeductibleAmount(e.target.value ? parseFloat(e.target.value) : "")}
-                fullWidth
-                sx={{ mb: 2 }}
-              />
-              <Select
-                key={`deductible-category-${deductibleFormResetKey}`}
-                value={deductibleCategory || ""}
-                onChange={(e) => setDeductibleCategory(e.target.value)}
-                displayEmpty
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                <MenuItem value="" disabled>
-                  Select Tax Category
-                </MenuItem>
-                <MenuItem value="Charitable Donations">Charitable Donations</MenuItem>
-                <MenuItem value="Business Expenses">Business Expenses</MenuItem>
-                <MenuItem value="Medical Expenses">Medical Expenses</MenuItem>
-                <MenuItem value="Other">Other (Custom)</MenuItem>
-              </Select>
-              {deductibleCategory === "Other" && (
-                <TextField
-                  key={`deductible-custom-category-${deductibleFormResetKey}`}
-                  label="Custom Category"
-                  value={deductibleCustomCategory}
-                  onChange={(e) => setDeductibleCustomCategory(e.target.value)}
-                  fullWidth
-                  sx={{ mb: 2 }}
-                />
-              )}
-              <TextField
-                key={`deductible-notes-${deductibleFormResetKey}`}
-                label="Notes"
-                value={deductibleNotes}
-                onChange={(e) => setDeductibleNotes(e.target.value)}
-                multiline
-                rows={3}
-                fullWidth
-                sx={{ mb: 2 }}
-              />
-              <Button
-                variant="contained"
-                onClick={handleSaveDeductible}
-                sx={{ mt: 2 }}
-              >
-                {editingDeductibleId ? "Update Expense" : "Log Expense"}
-              </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={resetDeductibleForm}
-                sx={{ mt: 2, ml: 2 }}
-              >
-                Clear Form
-              </Button>
-              {editingDeductibleId && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={resetDeductibleForm}
-                  sx={{ mt: 2, ml: 2 }}
-                >
-                  Cancel Edit
-                </Button>
-              )}
+              <form onSubmit={handleSave}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <TextField
+                    name="deductibleAmount"
+                    label="Amount ($)"
+                    type="number"
+                    value={formData.deductibleAmount}
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                  />
+
+                  <Select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    displayEmpty
+                    required
+                    fullWidth
+                  >
+                    <MenuItem value="" disabled>Select Category</MenuItem>
+                    {predefinedCategories.map((cat) => (
+                      <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                    ))}
+                  </Select>
+
+                  {formData.category === "Other" && (
+                    <TextField
+                      name="customCategory"
+                      label="Custom Category"
+                      value={formData.customCategory}
+                      onChange={handleInputChange}
+                      required
+                      fullWidth
+                    />
+                  )}
+
+                  <TextField
+                    name="notes"
+                    label="Notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    multiline
+                    rows={3}
+                    fullWidth
+                  />
+
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <Button type="submit" variant="contained" color="primary">
+                      {editingId ? "Update" : "Add"} Expense
+                    </Button>
+                    {editingId && (
+                      <Button variant="outlined" onClick={resetForm}>
+                        Cancel Edit
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+              </form>
             </Card>
 
-            {/* Table of Logged Deductible Expenses */}
-            <Card sx={{ p: 2, mb: 2, width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" } }}>
+            {/* Summary Card */}
+            <Card sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Logged Deductible Expenses
+                Summary
               </Typography>
-              {deductibleExpenses.length > 0 ? (
+              <Typography variant="h4">
+                Total Deductions: ${totalDeductibleSpent.toFixed(2)}
+              </Typography>
+            </Card>
+
+            {/* Expenses Table */}
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Logged Expenses
+              </Typography>
+              {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                  <LoadingSpinner />
+                </Box>
+              ) : deductibleExpenses.length > 0 ? (
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Amount Spent</TableCell>
+                      <TableCell>Amount</TableCell>
                       <TableCell>Category</TableCell>
                       <TableCell>Notes</TableCell>
-                      <TableCell>Created At</TableCell>
+                      <TableCell>Date</TableCell>
                       <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {deductibleExpenses.map((expense) => (
                       <TableRow key={expense.id}>
-                        <TableCell>${expense.deductibleAmount}</TableCell>
+                        <TableCell>${Number(expense.deductibleAmount).toFixed(2)}</TableCell>
                         <TableCell>{expense.category}</TableCell>
-                        <TableCell>{expense.notes || "N/A"}</TableCell>
+                        <TableCell>{expense.notes}</TableCell>
                         <TableCell>{new Date(expense.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <IconButton onClick={() => handleEditDeductible(expense)} color="primary">
+                          <IconButton onClick={() => handleEdit(expense)} color="primary">
                             <EditIcon />
                           </IconButton>
-                          <IconButton onClick={() => handleDeleteDeductible(expense.id)} color="secondary">
+                          <IconButton onClick={() => handleDelete(expense.id!)} color="error">
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>
@@ -344,23 +359,14 @@ export default function TaxPrep() {
                   </TableBody>
                 </Table>
               ) : (
-                <Typography>No deductible expenses logged yet.</Typography>
+                <Typography color="textSecondary" sx={{ p: 2, textAlign: 'center' }}>
+                  No expenses logged yet.
+                </Typography>
               )}
             </Card>
-
-            {/* Summary Section */}
-            <Card sx={{ p: 2, mb: 2, width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" } }}>
-              <Typography variant="h6" gutterBottom>
-                Summary
-              </Typography>
-              <Typography>
-                Total Spent on Tax-Deductible Items: ${totalDeductibleSpent.toFixed(2)}
-              </Typography>
-            </Card>
           </>
-        ) : (
-          <Typography>Please log in to log your tax data.</Typography>
         )}
+
         <Snackbar
           open={!!error}
           autoHideDuration={6000}
@@ -376,7 +382,7 @@ export default function TaxPrep() {
           ContentProps={{ sx: { backgroundColor: "success.main" } }}
         />
       </Box>
-      <Box sx={{ height: "100px" }} />
+      <Box sx={{ height: "200px" }} />
     </Container>
   );
 }
