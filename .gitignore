@@ -24,6 +24,10 @@ dist-ssr
 *.sw?
 .env
 
+# Backend files
 /__pycache__/
 /backend/__pycache__/
-/backend/database_link.py
+/backend/root_password.py
+/backend/sdk.json
+/backend/setup_cred.py
+/backend/plaid_client_config.py
