@@ -36,6 +36,8 @@ import {
   onSnapshot 
 } from "firebase/firestore";
 import { SelectChangeEvent } from "@mui/material";
+import { alpha } from '@mui/material/styles';
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface DeductibleExpense {
   id?: string;
@@ -48,6 +50,24 @@ interface DeductibleExpense {
 const formatUserName = (user: any) => {
   if (!user) return '';
   return user.displayName || user.email?.split('@')[0] || '';
+};
+
+const COLORS = ["#1976d2", "#f57c00", "#fbc02d", "#43a047"]; // Blue, Orange, Yellow, Green
+
+const groupExpensesByCategory = (expenses: DeductibleExpense[]) => {
+  const grouped = expenses.reduce((acc, expense) => {
+    const category = expense.category;
+    if (!acc[category]) {
+      acc[category] = 0;
+    }
+    acc[category] += Number(expense.deductibleAmount);
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(grouped).map(([name, value]) => ({
+    name,
+    value
+  }));
 };
 
 export default function TaxPrep() {
@@ -73,7 +93,7 @@ export default function TaxPrep() {
   const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
 
   // Predefined categories
-  const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Other"];
+  const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Home Office Expenses", "Student Loan Interest", "Mortgage Interest", "Retirement Contributions", "Other"];
 
   useEffect(() => {
     if (!currentUser) {
@@ -244,7 +264,19 @@ export default function TaxPrep() {
         {currentUser && (
           <>
             {/* Entry Form */}
-            <Card sx={{ p: 3 }}>
+            <Card 
+              sx={{ 
+                p: 3,
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+                },
+                border: '1px solid',
+                borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                borderRadius: 2,
+              }}
+            >
               <Typography variant="h6" gutterBottom>
                 {editingId ? "Edit Deductible Expense" : "Add Deductible Expense"}
               </Typography>
@@ -296,11 +328,33 @@ export default function TaxPrep() {
                   />
 
                   <Box sx={{ display: "flex", gap: 2 }}>
-                    <Button type="submit" variant="contained" color="primary">
+                    <Button 
+                      type="submit" 
+                      variant="contained" 
+                      color="primary"
+                      sx={{
+                        transition: 'all 0.2s ease-in-out',
+                        '&:active': {
+                          transform: 'scale(0.95)',
+                        },
+                        '&:hover': {
+                          boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                        },
+                      }}
+                    >
                       {editingId ? "Update" : "Add"} Expense
                     </Button>
                     {editingId && (
-                      <Button variant="outlined" onClick={resetForm}>
+                      <Button 
+                        variant="outlined" 
+                        onClick={resetForm}
+                        sx={{
+                          transition: 'all 0.2s ease-in-out',
+                          '&:active': {
+                            transform: 'scale(0.95)',
+                          },
+                        }}
+                      >
                         Cancel Edit
                       </Button>
                     )}
@@ -310,17 +364,80 @@ export default function TaxPrep() {
             </Card>
 
             {/* Summary Card */}
-            <Card sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Summary
-              </Typography>
-              <Typography variant="h4">
-                Total Deductions: ${totalDeductibleSpent.toFixed(2)}
-              </Typography>
+            <Card 
+              sx={{ 
+                p: 3,
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+                },
+                border: '1px solid',
+                borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                borderRadius: 2,
+                background: (theme) => `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Summary
+                  </Typography>
+                  <Typography variant="h4" sx={{ mb: 2 }}>
+                    Total Tax Deductions: ${totalDeductibleSpent.toFixed(2)}
+                  </Typography>
+                </Box>
+                
+                <Box sx={{ flex: 1, height: 400 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Deductions by Category
+                  </Typography>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <Legend 
+                        layout="horizontal"
+                        align="right"
+                        verticalAlign="top"
+                        wrapperStyle={{ paddingBottom: 20 }}
+                        formatter={(value) => <span style={{ fontSize: '12px' }}>{value}</span>}
+                      />
+                      <Pie
+                        data={groupExpensesByCategory(deductibleExpenses)}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="55%"
+                        outerRadius={80}
+                        label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                        labelLine={false}
+                      >
+                        {groupExpensesByCategory(deductibleExpenses).map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Box>
             </Card>
 
             {/* Expenses Table */}
-            <Card sx={{ p: 3 }}>
+            <Card 
+              sx={{ 
+                p: 3,
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+                },
+                border: '1px solid',
+                borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                borderRadius: 2,
+              }}
+            >
               <Typography variant="h6" gutterBottom>
                 Logged Expenses
               </Typography>
@@ -347,10 +464,28 @@ export default function TaxPrep() {
                         <TableCell>{expense.notes}</TableCell>
                         <TableCell>{new Date(expense.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <IconButton onClick={() => handleEdit(expense)} color="primary">
+                          <IconButton 
+                            onClick={() => handleEdit(expense)} 
+                            color="primary"
+                            sx={{
+                              transition: 'all 0.2s ease-in-out',
+                              '&:active': {
+                                transform: 'scale(0.9)',
+                              },
+                            }}
+                          >
                             <EditIcon />
                           </IconButton>
-                          <IconButton onClick={() => handleDelete(expense.id!)} color="error">
+                          <IconButton 
+                            onClick={() => handleDelete(expense.id!)} 
+                            color="error"
+                            sx={{
+                              transition: 'all 0.2s ease-in-out',
+                              '&:active': {
+                                transform: 'scale(0.9)',
+                              },
+                            }}
+                          >
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>
