@@ -111,7 +111,7 @@ export default function HomeDashboard() {
   ] : [];
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 10 }}>
+    <Container maxWidth="lg" sx={{ mt: 5 }}>
       <Box
         sx={{
           display: "flex",
@@ -123,7 +123,9 @@ export default function HomeDashboard() {
           gap: 3,
         }}
       >
-        <PilotAvatar message={currentUser ? `Ready for takeoff, ${currentUser.email?.split("@")[0]}?` : "Log in to fly!"} />
+        <Box sx={{ position: 'relative', mt: 12, mb: 2, pt: 4 }}>
+          <PilotAvatar message={currentUser ? `Ready for takeoff, ${currentUser.email?.split("@")[0]}?` : "Log in to fly!"} />
+        </Box>
         
         <Typography variant="h5" gutterBottom>
           Welcome, Captain! Your Flight Path:
