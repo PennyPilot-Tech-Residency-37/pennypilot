@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
 import LoginModal from "./LoginModal";
 import PilotAvatar from "./PilotAvatar";
-import { Theme,alpha } from '@mui/material/styles';
+import { Theme, alpha } from '@mui/material/styles';
 
 const formatUserName = (email: string | null | undefined) => {
   if (!email) return '';
@@ -140,7 +140,7 @@ const LandingPage = () => {
           }}
         >
           {/* Header Section */}
-          <Box sx={{ position: "relative", mb: 4 }}>
+          <Box sx={{ position: "relative", mb: 4, mt: 9 }}>
             <PilotAvatar
               message={
                 currentUser
