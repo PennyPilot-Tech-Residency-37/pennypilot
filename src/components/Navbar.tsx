@@ -107,6 +107,12 @@ export default function Navbar() {
     </Box>
   );
 
+  const formatUserName = (email: string | null | undefined) => {
+    if (!email) return '';
+    const name = email.split("@")[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
   return (
     <>
       <AppBar position="fixed" color="primary" sx={{ top: 0, left: 0, right: 0, zIndex: 1100 }}>
@@ -147,7 +153,7 @@ export default function Navbar() {
           {/* Greeting */}
           {currentUser && (
             <Typography sx={{ mr: 2, display: { xs: "none", sm: "block" } }}>
-              Hello, {currentUser.email?.split("@")[0]}!
+              Hello, {formatUserName(currentUser.email)}!
             </Typography>
           )}
           {/* Desktop Nav Buttons */}
