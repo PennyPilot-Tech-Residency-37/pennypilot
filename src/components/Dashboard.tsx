@@ -5,7 +5,7 @@ import { db } from "../types/firebaseConfig";
 import PilotAvatar from "./PilotAvatar";
 import { useAuth } from "../context/auth";
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { alpha } from '@mui/material/styles';
+import { alpha, Theme } from '@mui/material/styles';
 import { useNavigate } from "react-router-dom";
 import { BudgetData } from "../types/budget";
 
@@ -82,12 +82,12 @@ export default function HomeDashboard() {
     transition: 'all 0.3s ease-in-out',
     '&:hover': {
       transform: 'translateY(-4px)',
-      boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+      boxShadow: (theme: Theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
     },
     border: '1px solid',
-    borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+    borderColor: (theme: Theme) => alpha(theme.palette.primary.main, 0.1),
     borderRadius: 2,
-    background: (theme) => `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+    background: (theme: Theme) => `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
   };
 
   const buttonStyle = {
@@ -97,7 +97,7 @@ export default function HomeDashboard() {
       transform: 'scale(0.95)',
     },
     '&:hover': {
-      boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+      boxShadow: (theme: Theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
     },
   };
 
