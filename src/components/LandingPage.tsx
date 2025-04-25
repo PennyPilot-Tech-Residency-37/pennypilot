@@ -140,7 +140,7 @@ const LandingPage = () => {
           }}
         >
           {/* Header Section */}
-          <Box sx={{ position: "relative", mb: 4 }}>
+          <Box sx={{ position: "relative", mt: 10, mb: 4 }}>
             <PilotAvatar
               message={
                 currentUser
