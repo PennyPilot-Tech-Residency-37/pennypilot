@@ -29,7 +29,7 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
       <div
         style={{
           position: "absolute",
-          top: "-80px",
+          top: "-120px",
           left: "60%",
           opacity: bubbleProps.opacity.get(),
           transform: `translateX(-50%) scale(${bubbleProps.scale.get()})`
