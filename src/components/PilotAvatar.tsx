@@ -11,7 +11,7 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
   const bubbleProps = useSpring({
     from: { opacity: 0, scale: 0.8 },
     to: { opacity: 1, scale: 1 },
-    config: { duration: 500 },
+    config: { duration: 200 },
   });
 
   return (
@@ -31,7 +31,7 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
           position: "absolute",
           top: "-120px",
           left: "60%",
-          opacity: bubbleProps.opacity.get(),
+          // opacity: bubbleProps.opacity.get(),
           transform: `translateX(-50%) scale(${bubbleProps.scale.get()})`
         }}
       >
