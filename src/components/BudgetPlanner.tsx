@@ -1,101 +1,86 @@
-import React, { useState } from "react";
-import { Button, TextField, Typography, Card, Container, Box } from "@mui/material";
-import { useSpring, animated } from "react-spring";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "../types/firebaseConfig";
+import { useState } from "react";
+import { Container, Typography, Box, Button, Grid } from "@mui/material";
 import PilotAvatar from "./PilotAvatar";
-import { useAuth } from "../context/auth";
+import BudgetSetup from "./BudgetGuide";
+import BudgetGroup from "./BudgetGroup";
+import BudgetSummaryChart from "./BudgetSummaryChart";
+import { BudgetData } from "../types/budget";
 
-export default function BudgetPlanner() {
-  const { currentUser } = useAuth();
-  const [income, setIncome] = useState<number>(0);
-  const [expenses, setExpenses] = useState<number>(0);
-  const [saved, setSaved] = useState(false);
+const BudgetBoard = () => {
+  const [budgetData, setBudgetData] = useState<BudgetData | null>(null);
+  const [showSetup, setShowSetup] = useState(false);
 
-  const checkProps = useSpring({
-    opacity: saved ? 1 : 0,
-    from: { opacity: 0 },
-  });
-
-  const handleSaveBudget = async () => {
-    if (!currentUser) return;
-    try {
-      await addDoc(collection(db, "users"), {
-        uid: currentUser.uid,
-        budgetSet: true,
-        income,
-        expenses,
-        timestamp: new Date(),
-      });
-      setSaved(true);
-    } catch (e) {
-      console.error("Error saving budget: ", e);
-    }
+  const handleFinishSetup = (data: BudgetData) => {
+    setBudgetData(data);
+    setShowSetup(false);
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 10 }}>
-
+    <>
+    {budgetData && (
+      <Box sx={{ position: "absolute", top: 16, left: 16, mt: 8 }}>
+        <PilotAvatar message="" sx={{ width: 200, pt: 5 }} />
+      </Box>
+    )}
+    <Container maxWidth="xl" sx={{ mt: 8, position: "relative" }}>
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           textAlign: "center",
-
           minHeight: "calc(100vh - 128px)",
           justifyContent: "center",
           px: { xs: 2, sm: 0 },
         }}
       >
-        <PilotAvatar
-          message={
-            currentUser
-              ? saved
-                ? "Great job, co-pilot!"
-                : "Let's set your course!"
-              : "Log in to plan!"
-          }
-        />
-        <Typography variant="h5" gutterBottom>
-          Set Your Flight Plan
+
+        <Typography variant="h4" gutterBottom>
+          {budgetData ? "Your Budget" : "Create Your Budget"}
         </Typography>
-        {currentUser ? (
-          <Card sx={{ p: 2, mb: 2, width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" } }}>
-            <TextField
-              label="Monthly Income"
-              type="number"
-              value={income}
-              onChange={(e) => setIncome(Number(e.target.value))}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              label="Monthly Expenses"
-              type="number"
-              value={expenses}
-              onChange={(e) => setExpenses(Number(e.target.value))}
-              fullWidth
-            />
-            <Button
-              variant="contained"
-              onClick={handleSaveBudget}
-              sx={{ mt: 2 }}
-              disabled={saved}
-            >
-              Generate Budget
-            </Button>
-            {saved && (
-              <animated.div style={checkProps}>
-                <Typography color="green">✓ Budget Set! +20 Pilot Points</Typography>
-              </animated.div>
-            )}
-          </Card>
-        ) : (
-          <Typography>Please log in to set your budget.</Typography>
+
+        {!showSetup && (
+          <Button variant="contained" onClick={() => setShowSetup(true)}>
+            Create a New Budget
+          </Button>
+        )}
+
+        {showSetup && (
+          <BudgetSetup open={showSetup} onClose={() => setShowSetup(false)} onFinish={handleFinishSetup} />
+        )}
+
+        {budgetData && (
+            <Box
+            sx={{
+              border: "2px solid #e0e0e0",
+              borderRadius: 2,
+              padding: 3,
+              backgroundColor: "#fafafa",
+            }}
+          >
+          <Grid container spacing={4} sx={{ mt: 4, border: "2 solid red" }} alignItems="flex-start">
+            <Grid item xs={12} md={7}>
+              <Typography variant="h6" align="left" gutterBottom>
+                Budget Table
+              </Typography>
+              <Box sx={{ width: "100%" }}>
+                <BudgetGroup title="Income" items={budgetData.income} />
+                <BudgetGroup title="Expenses" items={budgetData.expenses} />
+                <BudgetGroup title="Savings" items={budgetData.savings} />
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={5}>
+            <Box sx={{ width: "100%" }}>
+              <BudgetSummaryChart data={budgetData} />
+              </Box>
+            </Grid>
+          </Grid>
+          </Box>
         )}
       </Box>
     </Container>
+    </>
   );
+};
 
-} 
+export default BudgetBoard;

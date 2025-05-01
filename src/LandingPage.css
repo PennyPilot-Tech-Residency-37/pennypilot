@@ -1,0 +1,78 @@
+.landing-container {
+    font-family: "Inter", sans-serif;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 30px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .nav-links a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #333;
+  }
+  
+  .hero {
+    position: relative;
+    margin-top: 40px;
+  }
+  
+  .pilot-section {
+    display: inline-block;
+    position: relative;
+    margin: 20px;
+  }
+  
+  .pilot {
+    width: 150px;
+  }
+  
+  .speech-bubble {
+    position: absolute;
+    top: -20px;
+    left: 170px;
+    background: #e0f0ff;
+    border-radius: 20px;
+    padding: 15px;
+    max-width: 200px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .start-btn {
+    background-color: #3b82f6;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-top: 20px;
+    cursor: pointer;
+  }
+  
+  .tagline {
+    margin-top: 20px;
+    font-size: 1.1rem;
+    color: #444;
+  }
+  
+  .plane {
+    position: absolute;
+    width: 80px;
+    top: 50%;
+    left: 50%;
+    transform-origin: -200px 0px; /* Creates circular path */
+  }
+    
+  .features {
+    margin-top: 60px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+  

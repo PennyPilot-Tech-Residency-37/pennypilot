@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -11,37 +11,74 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import { useSpring, animated } from "react-spring";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
+import { animated, useSpring } from "@react-spring/web";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useAuth } from "../context/auth"; 
+import { useAuth } from "../context/auth";
 import LoginModal from "./LoginModal";
 import { signOut } from "firebase/auth";
 import { auth } from "../context/auth";
+import { motion } from "framer-motion";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [intendedPath, setIntendedPath] = useState<string | null>(null); // Track intended path
   const { currentUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate(); // For programmatic navigation
 
-  // Animation for the logo
   const logoProps = useSpring({
     from: { rotate: 0 },
     to: { rotate: 360 },
     config: { duration: 1000 },
     reset: true,
+    onRest: () => {
+      logoProps.rotate.set(0);
+    },
   });
 
-  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
-  const handleLoginOpen = () => setLoginOpen(true);
-  const handleLoginClose = () => setLoginOpen(false);
-  const handleLogout = () => signOut(auth);
+  useEffect(() => {
+    logoProps.rotate.start();
+  }, [location.pathname]);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleLoginOpen = (path?: string) => {
+    if (path) setIntendedPath(path); // Store the intended path
+    setLoginOpen(true);
+    logoProps.rotate.start();
+  };
+
+  const handleLoginClose = () => {
+    setLoginOpen(false);
+    setIntendedPath(null); // Clear intended path when modal closes
+  };
+
+  const handleLogout = () => {
+    signOut(auth);
+    navigate("/"); // Redirect to home after logout
+  };
 
   const navItems = [
-    { label: "Home", path: "/" },
+    { label: "Home", path: currentUser ? "/dashboard" : "/" },
     { label: "Budget", path: "/budget" },
     { label: "Tax Prep", path: "/tax-prep" },
+    { label: "Goals", path: "/goals" },
   ];
+
+  const handleNavClick = (path: string) => {
+    if (!currentUser && path !== "/") {
+      // If logged out and not navigating to home, open login modal
+      handleLoginOpen(path);
+    } else {
+      // If logged in, navigate directly and animate logo
+      logoProps.rotate.start();
+      navigate(path);
+    }
+  };
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ width: 250 }}>
@@ -49,9 +86,8 @@ export default function Navbar() {
         {navItems.map((item) => (
           <ListItem
             key={item.label}
-            component={Link}
-            to={item.path}
-            sx={{ color: "inherit", textDecoration: "none" }}
+            onClick={() => handleNavClick(item.path)} // Use handleNavClick
+            sx={{ color: "inherit", textDecoration: "none", cursor: "pointer" }}
           >
             <ListItemText primary={item.label} />
           </ListItem>
@@ -62,7 +98,7 @@ export default function Navbar() {
               Logout
             </Button>
           ) : (
-            <Button color="inherit" onClick={handleLoginOpen}>
+            <Button color="inherit" onClick={() => handleLoginOpen()}>
               Login
             </Button>
           )}
@@ -70,6 +106,12 @@ export default function Navbar() {
       </List>
     </Box>
   );
+
+  const formatUserName = (email: string | null | undefined) => {
+    if (!email) return '';
+    const name = email.split("@")[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
 
   return (
     <>
@@ -85,16 +127,21 @@ export default function Navbar() {
               alignItems: "center",
             }}
           >
-            <animated.img
-              src="/images/PennyPilot-logo.png"
-              alt="Penny Pilot emblem with golden wings and a central P icon."
+            <Box
+              component={animated.div}
               style={{
-                ...logoProps, 
+                transform: logoProps.rotate.to((r) => `rotate(${r}deg)`),
                 height: 200,
                 zIndex: 2,
                 pointerEvents: "none",
               }}
-            />
+            >
+              <img
+                src="/images/PennyPilot-logo.png"
+                alt="Penny Pilot emblem with golden wings and a central P icon."
+                style={{ height: "100%" }}
+              />
+            </Box>
           </Box>
           {/* Title */}
           <Typography
@@ -106,7 +153,7 @@ export default function Navbar() {
           {/* Greeting */}
           {currentUser && (
             <Typography sx={{ mr: 2, display: { xs: "none", sm: "block" } }}>
-              Hello, {currentUser.email?.split("@")[0]}!
+              Hello, {formatUserName(currentUser.email)}!
             </Typography>
           )}
           {/* Desktop Nav Buttons */}
@@ -115,8 +162,7 @@ export default function Navbar() {
               <Button
                 key={item.label}
                 color="inherit"
-                component={Link}
-                to={item.path}
+                onClick={() => handleNavClick(item.path)} // Use handleNavClick
                 sx={{ mx: 1 }}
               >
                 {item.label}
@@ -127,7 +173,7 @@ export default function Navbar() {
                 Logout
               </Button>
             ) : (
-              <Button color="inherit" onClick={handleLoginOpen}>
+              <Button color="inherit" onClick={() => handleLoginOpen()}>
                 Login
               </Button>
             )}
@@ -153,7 +199,7 @@ export default function Navbar() {
         {drawer}
       </Drawer>
       {/* Login Modal */}
-      <LoginModal open={loginOpen} onClose={handleLoginClose} />
+      <LoginModal open={loginOpen} onClose={handleLoginClose} intendedPath={intendedPath} />
       {/* Spacer */}
       <Box sx={{ height: "64px" }} />
     </>
