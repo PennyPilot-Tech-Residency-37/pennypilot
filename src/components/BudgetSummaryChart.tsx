@@ -28,7 +28,6 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({ data }) => {
     px: 2,
   }}
 >
-  {/* Pilot Avatar Positioned Top-Left */}
   <Box
     component="img"
     src="/images/pennypilot.png" 
