@@ -7,7 +7,7 @@ import { useAuth } from "../context/auth";
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { alpha, Theme } from '@mui/material/styles';
 import { useNavigate } from "react-router-dom";
-import { BudgetData } from "../types/budget";
+import { BudgetData } from "../types/types";
 
 interface UserData {
   budgetSet: boolean;

@@ -1,40 +1,42 @@
-import React from "react";
-import { Container, Typography, Box } from "@mui/material";
-import { useAuth } from "../context/auth";
-import PilotAvatar from "./PilotAvatar";
+import React, { useState } from "react";
+import GoalsPath from "./GoalsPath";
+import GoalsSidebar from "./GoalsSideBar";
+import CreateGoalModal from "./CreateGoalModal"; // Make sure this file exists
+import "./Goals.css";
 
-export default function Goals() {
-  const { currentUser } = useAuth();
+type Goal = {
+  id: number;
+  name: string;
+  completed: boolean;
+};
+
+const GoalsPage = () => {
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCreateGoal = (goalName: string) => {
+    const newGoal = {
+      id: Date.now(),
+      name: goalName,
+      completed: false
+    };
+    setGoals([...goals, newGoal]);
+  };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 10 }}>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          minHeight: "calc(100vh - 128px)",
-          justifyContent: "center",
-          px: { xs: 2, sm: 0 },
-        }}
-      >
-        <PilotAvatar
-          message={
-            currentUser
-              ? "Let's set some financial goals!"
-              : "Log in to set your goals!"
-          }
-        />
-        <Typography variant="h5" gutterBottom>
-          Financial Goals
-        </Typography>
-        {currentUser ? (
-          <Typography>Your goals will appear here.</Typography>
-        ) : (
-          <Typography>Please log in to set your financial goals.</Typography>
-        )}
-      </Box>
-    </Container>
+    <div className="goals-page-container">
+      <GoalsSidebar
+        goals={goals}
+        onOpenModal={() => setIsModalOpen(true)}
+      />
+      <GoalsPath goals={goals} />
+      <CreateGoalModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreate={handleCreateGoal}
+      />
+    </div>
   );
-}
+};
+
+export default GoalsPage;

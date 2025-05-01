@@ -1,7 +1,7 @@
 import React from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Box, Typography } from "@mui/material";
-import { BudgetData } from "../types/budget";
+import { BudgetData } from "../types/types";
 
 const COLORS = ["#1976d2", "#f57c00", "#fbc02d"];
 

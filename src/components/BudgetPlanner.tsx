@@ -4,7 +4,7 @@ import PilotAvatar from "./PilotAvatar";
 import BudgetSetup from "./BudgetGuide";
 import BudgetGroup from "./BudgetGroup";
 import BudgetSummaryChart from "./BudgetSummaryChart";
-import { BudgetData } from "../types/budget";
+import { BudgetData } from "../types/types";
 
 const BudgetBoard = () => {
   const [budgetData, setBudgetData] = useState<BudgetData | null>(null);
