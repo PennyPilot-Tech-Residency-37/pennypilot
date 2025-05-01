@@ -19,7 +19,7 @@ const BudgetBoard = () => {
     <>
     {budgetData && (
       <Box sx={{ position: "absolute", top: 16, left: 16, mt: 8 }}>
-        <PilotAvatar message="" sx={{ width: 200, pt: 5 }} />
+        <PilotAvatar message="" sx={{ width: 270, pt: 1 }} />
       </Box>
     )}
     <Container maxWidth="xl" sx={{ mt: 8, position: "relative" }}>

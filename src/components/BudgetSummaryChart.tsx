@@ -22,37 +22,60 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({ data }) => {
   return (
 <Box
   sx={{
+    position: "relative",
     width: "100%",
     height: 300,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    px: 2, // padding to prevent labels from spilling out
+    px: 2,
   }}
 >
-  <Typography variant="h6" gutterBottom>
-    Budget Breakdown
-  </Typography>
-  <ResponsiveContainer width="95%" height="100%">
-    <PieChart>
-      <Pie
-        dataKey="value"
-        isAnimationActive={false}
-        data={chartData}
-        cx="50%"
-        cy="50%"
-        outerRadius={80}
-        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-      >
-        {chartData.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-        ))}
-      </Pie>
-    </PieChart>
-  </ResponsiveContainer>
+  {/* Pilot Avatar Positioned Top-Left */}
+  <Box
+    component="img"
+    src="/images/pennypilot.png" 
+    alt="Peter the Pilot"
+    sx={{
+    position: "absolute",
+    top: -20, 
+    left: 8,
+    width: 180,
+    height: "auto",
+    zIndex: 2,
+    }}
+  />
+
+  {/* Chart Container */}
+  <Box
+    sx={{
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Typography variant="h6" gutterBottom>
+      Budget Breakdown
+    </Typography>
+    <ResponsiveContainer width="95%" height="100%">
+      <PieChart>
+        <Pie
+          dataKey="value"
+          isAnimationActive={false}
+          data={chartData}
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+      </PieChart>
+    </ResponsiveContainer>
+  </Box>
 </Box>
+
 
   );
 };
