@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: firebase-python
+Version: 0.0.3
+Summary: google firebase in python
+License: MIT
+Author: wayfaring-stranger
+Author-email: zw6p226m@duck.com
+Requires-Python: >=3.9,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Dist: firebase-admin (==6.1.0)
+Requires-Dist: pydantic
+Requires-Dist: python-dotenv (==1.0.0)
+Description-Content-Type: text/markdown
+
+# firebase-python
+## google firebase in python
