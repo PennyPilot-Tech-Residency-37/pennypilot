@@ -27,7 +27,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Budget.css";
 
 interface BudgetItem {
@@ -39,9 +39,15 @@ interface BudgetItem {
 interface BudgetGroupProps {
   title: string;
   items: BudgetItem[];
+  onItemsChange?: (items: BudgetItem[]) => void;
 }
 
-const SortableItem = ({ item, index, onItemChange, onDelete }: { item: BudgetItem; index: number; onItemChange: (index: number, key: string, value: string) => void; onDelete: (index: number) => void }) => {
+const SortableItem = ({ item, index, onItemChange, onDelete }: { 
+  item: BudgetItem; 
+  index: number; 
+  onItemChange: (index: number, key: string, value: string) => void; 
+  onDelete: (index: number) => void 
+}) => {
   const {
     attributes,
     listeners,
@@ -116,42 +122,43 @@ const SortableItem = ({ item, index, onItemChange, onDelete }: { item: BudgetIte
   );
 };
 
-const BudgetGroup = ({ title, items }: BudgetGroupProps) => {
-  const [groupItems, setGroupItems] = useState(items);
+const BudgetGroup = ({ title, items, onItemsChange }: BudgetGroupProps) => {
+  const [groupItems, setGroupItems] = useState<BudgetItem[]>(items);
   const sensors = useSensors(useSensor(PointerSensor));
+
+  // Update local state when items prop changes
+  useEffect(() => {
+    setGroupItems(items);
+  }, [items]);
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (active.id !== over?.id) {
       const oldIndex = groupItems.findIndex((item, idx) => (item.name || idx) === active.id);
       const newIndex = groupItems.findIndex((item, idx) => (item.name || idx) === over?.id);
-      setGroupItems(arrayMove(groupItems, oldIndex, newIndex));
+      const newItems = arrayMove(groupItems, oldIndex, newIndex);
+      setGroupItems(newItems);
+      onItemsChange?.(newItems);
     }
   };
 
   const handleItemChange = (index: number, key: string, value: string) => {
-    if (key === "spent") {
-      const updated = [...groupItems];
-      updated[index] = { ...updated[index], [key]: value };
-      setGroupItems(updated);
-      return;
-    }
-  
-    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-      const updated = [...groupItems];
-      updated[index] = { ...updated[index], [key]: value };
-      setGroupItems(updated);
-    }
+    const updated = [...groupItems];
+    updated[index] = { ...updated[index], [key]: value };
+    setGroupItems(updated);
+    onItemsChange?.(updated);
   };
-  
-  
 
   const handleDelete = (index: number) => {
-    setGroupItems(groupItems.filter((_, i) => i !== index));
+    const updated = groupItems.filter((_, i) => i !== index);
+    setGroupItems(updated);
+    onItemsChange?.(updated);
   };
 
   const handleAddLine = () => {
-    setGroupItems([...groupItems, { name: "", amount: "", spent: "" }]);
+    const updated = [...groupItems, { name: "", amount: "", spent: "" }];
+    setGroupItems(updated);
+    onItemsChange?.(updated);
   };
 
   return (
@@ -166,17 +173,17 @@ const BudgetGroup = ({ title, items }: BudgetGroupProps) => {
             <Typography fontWeight="bold">Line Item</Typography>
           </Grid>
           <Grid item xs={2}>
-            <Tooltip title={<span>The amount you’ve planned to spend in this category.</span>} placement="top" componentsProps={{ tooltip: { sx: { whiteSpace: "normal", maxWidth: 200 } } }}>
+            <Tooltip title={<span>The amount you've planned to spend in this category.</span>} placement="top" componentsProps={{ tooltip: { sx: { whiteSpace: "normal", maxWidth: 200 } } }}>
               <Typography fontWeight="bold">Budgeted</Typography>
             </Tooltip>
           </Grid>
           <Grid item xs={2}>
-            <Tooltip title={<span>What you’ve spent so far — editable anytime.</span>} placement="top" componentsProps={{ tooltip: { sx: { whiteSpace: "normal", maxWidth: 180 } } }}>
+            <Tooltip title={<span>What you've spent so far — editable anytime.</span>} placement="top" componentsProps={{ tooltip: { sx: { whiteSpace: "normal", maxWidth: 180 } } }}>
               <Typography fontWeight="bold">Spent</Typography>
             </Tooltip>
           </Grid>
           <Grid item xs={2}>
-            <Tooltip title={<span>What’s still available to spend based on your budget.</span>} placement="top" componentsProps={{ tooltip: { sx: { whiteSpace: "normal", maxWidth: 180 } } }}>
+            <Tooltip title={<span>What's still available to spend based on your budget.</span>} placement="top" componentsProps={{ tooltip: { sx: { whiteSpace: "normal", maxWidth: 180 } } }}>
               <Typography fontWeight="bold">Remaining</Typography>
             </Tooltip>
           </Grid>
