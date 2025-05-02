@@ -14,7 +14,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
 import Confetti from "react-confetti";
-import { BudgetData } from "../types/budget";
+import { BudgetData } from "../types/types";
 import CloseIcon from "@mui/icons-material/Close";
 
 interface BudgetSetupProps {
