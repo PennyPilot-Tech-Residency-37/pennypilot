@@ -19,16 +19,17 @@ import CloseIcon from "@mui/icons-material/Close";
 
 interface BudgetSetupProps {
   open: boolean;
-  onFinish: (data: BudgetData) => void;
+  onFinish: (data: BudgetData, name: string) => void;
   onClose: () => void;
 }
 
-const steps = ["Income", "Expenses", "Savings", "Summary", "Success"];
+const steps = ["Name", "Income", "Expenses", "Savings", "Summary", "Success"];
 const COLORS = ["#1976d2", "#f57c00", "#fbc02d"];
 
 const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) => {
   const [step, setStep] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [budgetName, setBudgetName] = useState("");
 
   const [income, setIncome] = useState([{ name: "", amount: "" }]);
   const [expenses, setExpenses] = useState([{ name: "", amount: "" }]);
@@ -40,15 +41,16 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
   const handleClose = () => {
     setStep(0);
     setShowConfetti(false);
+    setBudgetName("");
     onClose();
   };
 
   const handleFinish = () => {
     setShowConfetti(true);
-    setStep(4);
+    setStep(5);
     setTimeout(() => {
       const finalData = { income, expenses, savings };
-      onFinish(finalData);
+      onFinish(finalData, budgetName);
     }, 4000);
   };
 
@@ -76,7 +78,6 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
     updateField(type, index, key, value);
   };
   
-  
   const updateField = (
     type: string,
     index: number,
@@ -92,7 +93,6 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
     if (type === "expenses") setExpenses(update(expenses));
     if (type === "savings") setSavings(update(savings));
   };
-  
 
   const handleDeleteLine = (type: string, index: number) => {
     const remove = (arr: { name: string; amount: string }[]) => arr.filter((_, i) => i !== index);
@@ -155,12 +155,27 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
+              What would you like to name your budget?
+            </Typography>
+            <TextField
+              fullWidth
+              label="Budget Name"
+              value={budgetName}
+              onChange={(e) => setBudgetName(e.target.value)}
+              sx={{ mt: 2 }}
+            />
+          </Box>
+        );
+      case 1:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
               Add your income
             </Typography>
             {renderDynamicFields("income", income)}
           </Box>
         );
-      case 1:
+      case 2:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -169,7 +184,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
             {renderDynamicFields("expenses", expenses)}
           </Box>
         );
-      case 2:
+      case 3:
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -178,7 +193,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
             {renderDynamicFields("savings", savings)}
           </Box>
         );
-      case 3:
+      case 4:
         return (
           <Box>
             <Typography variant="h5" gutterBottom>
@@ -203,7 +218,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
             </ResponsiveContainer>
           </Box>
         );
-      case 4:
+      case 5:
         return (
           <Box textAlign="center">
             {showConfetti && <Confetti recycle={false} numberOfPieces={300} />}
@@ -223,24 +238,23 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
   };
 
   return (
-
-      <Backdrop
-        open={open}
-        onClick={onClose}
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1, backdropFilter: "blur(6px)" }}
+    <Backdrop
+      open={open}
+      onClick={onClose}
+      sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1, backdropFilter: "blur(6px)" }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100vw",
+          height: "100vh",
+          px: 2,
+        }}
       >
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      width: "100vw",
-      height: "100vh",
-      px: 2,
-    }}
-  >
         <Paper
-        onClick={(e) => { console.log("Inside modal box"); e.stopPropagation()}}
+          onClick={(e) => { e.stopPropagation() }}
           elevation={3}
           sx={{
             width: "100%",
@@ -272,7 +286,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
               <Grid item xs={4}>
                 <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1} sx={{ px: 2 }}>
                   <Typography variant="body2" color="white" sx={{ whiteSpace: "nowrap" }}>
-                    Step {step + 1} of 5
+                    Step {step + 1} of 6
                   </Typography>
                   <IconButton onClick={onClose} sx={{ color: "white" }}>
                     <CloseIcon />
@@ -283,23 +297,22 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
           </Box>
 
           <Box sx={{ px: 3, pt: 1, pb: 2 }}>
-          <LinearProgress
-            variant="determinate"
-            value={((step + 1) / steps.length) * 100}
-            sx={{
-              height: 6,
-              borderRadius: 5,
-              '& .MuiLinearProgress-bar': {
-                transition: 'transform 0.5s ease-in-out',
-              },
-            }}
-          />
-
+            <LinearProgress
+              variant="determinate"
+              value={((step + 1) / steps.length) * 100}
+              sx={{
+                height: 6,
+                borderRadius: 5,
+                '& .MuiLinearProgress-bar': {
+                  transition: 'transform 0.5s ease-in-out',
+                },
+              }}
+            />
           </Box>
 
           <Box sx={{ px: 4, flexGrow: 1, py: 5 }}>{renderStepContent()}</Box>
 
-          {step < 4 && (
+          {step < 5 && (
             <Box
               sx={{
                 px: 4,
@@ -319,6 +332,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
                 <Button
                   variant="contained"
                   onClick={step === steps.length - 2 ? handleFinish : handleNext}
+                  disabled={step === 0 && !budgetName.trim()}
                 >
                   {step === steps.length - 2 ? "Finish" : "Next"}
                 </Button>
@@ -326,8 +340,8 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
             </Box>
           )}
         </Paper>
-        </Box>
-      </Backdrop>
+      </Box>
+    </Backdrop>
   );
 };
 
