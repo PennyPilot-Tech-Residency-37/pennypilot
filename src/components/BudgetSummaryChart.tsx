@@ -57,15 +57,15 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
           sx={{
             position: "absolute",
             top: -80,
-            left: -40,
-            width: 300,
+            left: -110,
+            width: { xs: 200, sm: 250, md: 400 }, // Responsive scaling
             height: "auto",
-            zIndex: 2,
+            zIndex: 2
           }}
         />
 
         {/* Create New Budget Button */}
-        <Box sx={{ mb: 9, textAlign: "center", mt: 7, width: "58%", px: 20 }}>
+        <Box sx={{ mb: 9, textAlign: "center", mt: 7, width: { xs: "100%", sm: "58%" }, px: { xs: 10, sm: 20 } }}>
           <Button
             variant="contained"
             color="primary"
