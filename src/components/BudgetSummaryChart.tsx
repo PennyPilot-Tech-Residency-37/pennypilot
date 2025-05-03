@@ -58,67 +58,56 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
             position: "absolute",
             top: -80,
             left: -110,
-            width: { xs: 200, sm: 250, md: 400 }, // Responsive scaling
+            width: { xs: 200, sm: 250, md: 400 },
             height: "auto",
-            zIndex: 2
+            zIndex: 2,
           }}
         />
 
         {/* Create New Budget Button */}
-        <Box sx={{ mb: 9, textAlign: "center", mt: 7, width: { xs: "100%", sm: "58%" }, px: { xs: 10, sm: 20 } }}>
+        <Box sx={{ mb: 4, textAlign: "center", mt: 7, width: { xs: "100%", sm: "58%" }, px: { xs: 10, sm: 20 } }}>
           <Button
             variant="contained"
             color="primary"
             aria-label="Create a new budget"
             fullWidth
             onClick={() => onCreateBudget("")}
-            sx={{ maxWidth: 400, mx: "auto" }}
+            sx={{
+              maxWidth: 400,
+              mx: "auto",
+              py: { xs: 1.5, sm: 2 },
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              fontWeight: "bold",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+              "&:hover": {
+                boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                transform: "translateY(-2px)",
+                transition: "all 0.2s ease-in-out",
+              },
+            }}
           >
             Create a New Budget
           </Button>
         </Box>
 
-        {/* Pie Chart for Budget Breakdown */}
+        {/* List of User Budgets */}
         <Box
           sx={{
-            height: 300,
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            px: 4,
+            mt: { xs: 12, sm: 14, md: 16 },
+            mb: 4,
+            border: "1px solid #e0e0e0",
+            borderRadius: 2,
+            p: 2,
+            width: { xs: "100%", sm: "90%", md: "85%" },
+            ml: { xs: 1, sm: 2, md: 3},
+            mr: "auto",
+            zIndex: 1,
           }}
         >
-          <Typography variant="h6" gutterBottom>
-            Budget Breakdown
-          </Typography>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ top: 0, right: 20, bottom: 0, left: 20 }}>
-              <Pie
-                dataKey="value"
-                isAnimationActive={false}
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Legend verticalAlign="bottom" height={36} />
-            </PieChart>
-          </ResponsiveContainer>
-        </Box>
-
-        {/* List of User Budgets */}
-        <Box sx={{ mt: 4, border: "1px solid #e0e0e0", borderRadius: 2, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
             Your Budgets
           </Typography>
-          <List sx={{ maxHeight: 200, overflowY: "auto" }}>
+          <List sx={{ maxHeight: 150, overflowY: "auto" }}>
             {currentBudgets.map((budget, index) => (
               <ListItem
                 button
@@ -133,11 +122,70 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
               >
                 <ListItemText
                   primary={budget.name}
-                  primaryTypographyProps={{ fontWeight: data === budget.data ? "bold" : "normal" }}
+                  primaryTypographyProps={{ fontWeight: data === budget.data ? "bold" : "normal", fontSize: { xs: "0.875rem", sm: "1rem" } }}
                 />
               </ListItem>
             ))}
           </List>
+        </Box>
+
+        {/* Pie Chart for Budget Breakdown */}
+        <Box
+          sx={{
+            mt: 10,
+            height: 450, // Increased height to accommodate lower legend
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            ml: { xs: -1, sm: -1, md: -2 },
+            pr: 4,
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: "1rem", sm: "1rem" } }}>
+            Budget Breakdown
+          </Typography>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ top: 10, right: 40, bottom: 100, left: 40 }}> {/* Increased bottom margin significantly */}
+              <Pie
+                dataKey="value"
+                isAnimationActive={false}
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label={({ name, percent, cx, cy, midAngle, outerRadius, index }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = outerRadius * 1.3;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill={COLORS[index % COLORS.length]}
+                      textAnchor={x > cx ? "start" : "end"}
+                      dominantBaseline="central"
+                      fontSize={12}
+                    >
+                      {`${name}: ${(percent * 100).toFixed(1)}%`}
+                    </text>
+                  );
+                }}
+                labelLine={true}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                wrapperStyle={{ marginTop: 40 }} // Increased margin to move legend much lower
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </Box>
       </Box>
     </ThemeProvider>
