@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Container, Typography, Box, Button, Grid, ThemeProvider, createTheme } from "@mui/material";
-import PilotAvatar from "./PilotAvatar";
 import BudgetSetup from "./BudgetGuide";
 import BudgetGroup from "./BudgetGroup";
 import BudgetSummaryChart from "./BudgetSummaryChart";
@@ -71,11 +70,6 @@ const BudgetBoard = () => {
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="xl" sx={{ mt: 8, mb: 8, position: "relative", px: { xs: 2, sm: 4, md: 6 } }}>
-        {currentBudget && (
-          <Box sx={{ position: "absolute", top: 16, left: -22, mt: -7, mb: 5 }}>
-            <PilotAvatar message="" sx={{ width: 230, pt: 1 }} />
-          </Box>
-        )}
         <Box
           sx={{
             display: "flex",
