@@ -32,4 +32,4 @@ dist-ssr
 /backend/sdk.json
 /backend/setup_cred.py
 /backend/plaid_client_config.py
-/env/
+/venv/
