@@ -1,11 +1,9 @@
 from sqlalchemy import engine, create_engine
 from sqlalchemy.orm import sessionmaker
 from models import User, LinkedAccount, Transaction, Goal, TaxInfo
-from database_link import SQLALCHEMY_DATABASE_URI
+from config import db
 
-engine = create_engine(SQLALCHEMY_DATABASE_URI)
-Session = sessionmaker(bind=engine)
-session = Session()
+session = db.session
 
 new_user = User(id=777, name="John Johnson", email="johnjohn@john.com", phone="700-700-7000")
 session.add(new_user)
