@@ -1,13 +1,19 @@
-import { useState } from "react";
-import { Container, Typography, Box, Button, Grid, ThemeProvider, createTheme } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Container, Typography, Box, Button, Grid, ThemeProvider, createTheme, List, ListItem, ListItemText } from "@mui/material";
 import BudgetSetup from "./BudgetGuide";
 import BudgetGroup from "./BudgetGroup";
 import BudgetSummaryChart from "./BudgetSummaryChart";
 import { BudgetData } from "../types/types";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { db } from "../types/firebaseConfig";
+import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { useAuth } from "../context/auth";
 
 interface Budget {
+  id?: string;
   name: string;
   data: BudgetData;
+  createdAt?: string;
 }
 
 // Custom MUI theme for consistency
@@ -24,18 +30,77 @@ const theme = createTheme({
 });
 
 const BudgetBoard = () => {
+  const { currentUser } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
   const [showSetup, setShowSetup] = useState(false);
 
-  const handleFinishSetup = (data: BudgetData, name: string) => {
+  // Fetch budgets from Firestore on mount
+  useEffect(() => {
+    if (!currentUser) return;
+    const budgetRef = collection(db, "users", currentUser.uid, "budget");
+    const budgetQuery = query(budgetRef, orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(budgetQuery, (snapshot) => {
+      const fetchedBudgets = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name || `Budget ${doc.id}`,
+        data: {
+          income: doc.data().income || [],
+          expenses: doc.data().expenses || [],
+          savings: doc.data().savings || [],
+        },
+        createdAt: doc.data().createdAt,
+      })) as Budget[];
+      setBudgets(fetchedBudgets);
+      if (fetchedBudgets.length > 0) {
+        setCurrentBudget(fetchedBudgets[0]);
+      } else {
+        setCurrentBudget(null);
+      }
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Save new budget to Firestore
+  const handleFinishSetup = async (data: BudgetData, name: string) => {
+    if (!currentUser) return;
     const newBudget = {
       name: name || `Budget ${budgets.length + 1}`,
-      data,
+      income: data.income || [],
+      expenses: data.expenses || [],
+      savings: data.savings || [],
+      createdAt: new Date().toISOString(),
     };
-    setBudgets([...budgets, newBudget]);
-    setCurrentBudget(newBudget);
-    setShowSetup(false);
+    const budgetRef = collection(db, "users", currentUser.uid, "budget");
+    await addDoc(budgetRef, newBudget);
+    setShowSetup(false); // Firestore onSnapshot will update state
+  };
+
+  // Update budget in Firestore
+  const handleBudgetUpdate = async (
+    type: "income" | "expenses" | "savings",
+    items: { name: string; amount: string; spent?: string }[]
+  ) => {
+    if (!currentBudget || !currentUser) return;
+    const updatedBudget = {
+      ...currentBudget,
+      data: {
+        ...currentBudget.data,
+        [type]: items,
+      },
+    };
+    if (currentBudget.id) {
+      const budgetRef = doc(db, "users", currentUser.uid, "budget", currentBudget.id);
+      await updateDoc(budgetRef, {
+        name: updatedBudget.name,
+        income: updatedBudget.data.income,
+        expenses: updatedBudget.data.expenses,
+        savings: updatedBudget.data.savings,
+        createdAt: updatedBudget.createdAt || new Date().toISOString(),
+      });
+    }
+    setCurrentBudget(updatedBudget);
+    setBudgets(budgets.map((b) => (b.id === currentBudget.id ? updatedBudget : b)));
   };
 
   const handleBudgetSelect = (budget: BudgetData) => {
@@ -49,23 +114,36 @@ const BudgetBoard = () => {
     setShowSetup(true);
   };
 
-  const handleBudgetUpdate = (
-    type: "income" | "expenses" | "savings",
-    items: { name: string; amount: string; spent?: string }[]
-  ) => {
-    if (!currentBudget) return;
-
-    const updatedBudget = {
-      ...currentBudget,
-      data: {
-        ...currentBudget.data,
-        [type]: items,
-      },
-    };
-
-    setCurrentBudget(updatedBudget);
-    setBudgets(budgets.map((b) => (b === currentBudget ? updatedBudget : b)));
-  };
+  // Pie chart helpers (unchanged)
+  const COLORS = ["#1976d2", "#f57c00", "#fbc02d"];
+  function getChartData(data: BudgetData) {
+    const sum = (arr: { amount: string }[]) =>
+      arr.reduce((acc: number, val: { amount: string }) => acc + (parseFloat(val.amount) || 0), 0);
+    return [
+      { name: "Income", value: sum(data.income) },
+      { name: "Expenses", value: sum(data.expenses) },
+      { name: "Savings", value: sum(data.savings) },
+    ];
+  }
+  const MiniPieChart = ({ data }: { data: BudgetData }) => (
+    <ResponsiveContainer width={80} height={80}>
+      <PieChart>
+        <Pie
+          data={getChartData(data)}
+          dataKey="value"
+          cx="50%"
+          cy="50%"
+          outerRadius={30}
+          innerRadius={15}
+          label={false}
+        >
+          {getChartData(data).map((entry, idx) => (
+            <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+          ))}
+        </Pie>
+      </PieChart>
+    </ResponsiveContainer>
+  );
 
   return (
     <ThemeProvider theme={theme}>
@@ -154,6 +232,27 @@ const BudgetBoard = () => {
                   </Box>
                 </Grid>
               </Grid>
+            </Box>
+          )}
+
+          {budgets.length > 0 && (
+            <Box sx={{ my: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, background: '#fafafa' }}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                You have {budgets.length} budget{budgets.length > 1 ? 's' : ''}:
+              </Typography>
+              <List dense>
+                {budgets.slice(0, 3).map((budget) => (
+                  <ListItem key={budget.id || budget.name} sx={{ display: "flex", alignItems: "center" }}>
+                    <MiniPieChart data={budget.data} />
+                    <ListItemText primary={budget.name} sx={{ ml: 2 }} />
+                  </ListItem>
+                ))}
+                {budgets.length > 3 && (
+                  <ListItem>
+                    <ListItemText primary={`...and ${budgets.length - 3} more`} />
+                  </ListItem>
+                )}
+              </List>
             </Box>
           )}
         </Box>
