@@ -179,18 +179,92 @@ export default function Navbar() {
               <Button
                 key={item.label}
                 color="inherit"
-                onClick={() => handleNavClick(item.path)} // Use handleNavClick
-                sx={{ mx: 1 }}
+                onClick={() => handleNavClick(item.path)}
+                sx={{ 
+                  mx: 1,
+                  position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    width: '0%',
+                    height: '2px',
+                    bottom: 0,
+                    left: '50%',
+                    backgroundColor: 'white',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: 'translateX(-50%)',
+                  },
+                  '&:hover::after': {
+                    width: '80%',
+                  },
+                  '&:hover': {
+                    transform: 'translateY(-1px)',
+                    transition: 'all 0.2s ease-in-out',
+                    color: '#ffd700', // Gold color on hover
+                  },
+                }}
               >
                 {item.label}
               </Button>
             ))}
             {currentUser ? (
-              <Button color="inherit" onClick={handleLogout}>
+              <Button 
+                color="inherit" 
+                onClick={handleLogout}
+                sx={{ 
+                  mx: 1,
+                  position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    width: '0%',
+                    height: '2px',
+                    bottom: 0,
+                    left: '50%',
+                    backgroundColor: 'white',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: 'translateX(-50%)',
+                  },
+                  '&:hover::after': {
+                    width: '80%',
+                  },
+                  '&:hover': {
+                    transform: 'translateY(-1px)',
+                    transition: 'all 0.2s ease-in-out',
+                    color: '#ffd700', // Gold color on hover
+                  },
+                }}
+              >
                 Logout
               </Button>
             ) : (
-              <Button color="inherit" onClick={() => handleLoginOpen()}>
+              <Button 
+                color="inherit" 
+                onClick={() => handleLoginOpen()}
+                sx={{ 
+                  mx: 1,
+                  position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    width: '0%',
+                    height: '2px',
+                    bottom: 0,
+                    left: '50%',
+                    backgroundColor: 'white',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: 'translateX(-50%)',
+                  },
+                  '&:hover::after': {
+                    width: '80%',
+                  },
+                  '&:hover': {
+                    transform: 'translateY(-1px)',
+                    transition: 'all 0.2s ease-in-out',
+                    color: '#ffd700', // Gold color on hover
+                  },
+                }}
+              >
                 Login
               </Button>
             )}
