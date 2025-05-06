@@ -39,7 +39,7 @@ const BudgetBoard = () => {
   useEffect(() => {
     if (!currentUser) return;
     const budgetRef = collection(db, "users", currentUser.uid, "budget");
-    const budgetQuery = query(budgetRef, orderBy("createdAt", "desc"));
+    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
     const unsubscribe = onSnapshot(budgetQuery, (snapshot) => {
       const fetchedBudgets = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -232,27 +232,6 @@ const BudgetBoard = () => {
                   </Box>
                 </Grid>
               </Grid>
-            </Box>
-          )}
-
-          {budgets.length > 0 && (
-            <Box sx={{ my: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, background: '#fafafa' }}>
-              <Typography variant="subtitle1" fontWeight="bold">
-                You have {budgets.length} budget{budgets.length > 1 ? 's' : ''}:
-              </Typography>
-              <List dense>
-                {budgets.slice(0, 3).map((budget) => (
-                  <ListItem key={budget.id || budget.name} sx={{ display: "flex", alignItems: "center" }}>
-                    <MiniPieChart data={budget.data} />
-                    <ListItemText primary={budget.name} sx={{ ml: 2 }} />
-                  </ListItem>
-                ))}
-                {budgets.length > 3 && (
-                  <ListItem>
-                    <ListItemText primary={`...and ${budgets.length - 3} more`} />
-                  </ListItem>
-                )}
-              </List>
             </Box>
           )}
         </Box>
