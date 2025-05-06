@@ -9,6 +9,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { alpha, Theme } from '@mui/material/styles';
 import { useNavigate } from "react-router-dom";
 import { BudgetData } from "../types/types";
+import { motion, useAnimation } from "framer-motion";
 
 interface UserData {
   budgetSet: boolean;
@@ -45,9 +46,38 @@ const groupExpensesByCategory = (expenses: DeductibleExpense[]) => {
   }));
 };
 
+const LoadingLogo = () => (
+  <Box sx={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    p: 2,
+    animation: 'spin 1.5s linear infinite',
+    '@keyframes spin': {
+      '0%': {
+        transform: 'rotate(0deg)',
+      },
+      '100%': {
+        transform: 'rotate(360deg)',
+      },
+    },
+  }}>
+    <img 
+      src="/images/PennyPilot-logo.png" 
+      alt="Loading..." 
+      style={{ 
+        width: '60px', 
+        height: 'auto',
+        objectFit: 'contain'
+      }} 
+    />
+  </Box>
+);
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const planeControls = useAnimation();
   const [userData, setUserData] = useState<UserData>({ budgetSet: false });
   const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>([]);
   const [totalDeductibleSpent, setTotalDeductibleSpent] = useState<number>(0);
@@ -55,6 +85,47 @@ export default function Dashboard() {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
+  const startPlaneAnimation = async () => {
+    await planeControls.start({
+      x: "100vw",
+      y: 0,
+      rotate: 0,
+      transition: { duration: 0 },
+    });
+
+    await planeControls.start({
+      x: "-100vw",
+      y: 0,
+      transition: {
+        duration: 6,
+        ease: "linear",
+      },
+    });
+  };
+
+  useEffect(() => {
+    startPlaneAnimation();
+    let inactivityTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        startPlaneAnimation();
+      }, 6000); 
+    };
+
+    window.addEventListener("mousemove", resetTimer);
+    window.addEventListener("keydown", resetTimer);
+    window.addEventListener("click", resetTimer);
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      window.removeEventListener("mousemove", resetTimer);
+      window.removeEventListener("keydown", resetTimer);
+      window.removeEventListener("click", resetTimer);
+    };
+  }, [planeControls]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -78,7 +149,7 @@ export default function Dashboard() {
 
     // Fetch budgets in real-time
     const budgetRef = collection(db, "users", currentUser.uid, "budget");
-    const budgetQuery = query(budgetRef, orderBy("createdAt", "desc"));
+    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
     const unsubscribeBudgets = onSnapshot(budgetQuery, (snapshot) => {
       const fetchedBudgets = snapshot.docs.map((doc) => {
         const data = doc.data();
@@ -177,7 +248,26 @@ export default function Dashboard() {
   console.log("selectedBudget", selectedBudget);
 
   return (
-    <Box>
+    <Box
+      sx={{
+        position: "relative",
+        minHeight: "100vh",
+        overflowX: "hidden",
+        "&::before": {
+          content: '""',
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundImage: "url(/images/PennyPilot-cloud-background.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.5,
+          zIndex: -1,
+        },
+      }}
+    >
       <Container maxWidth="lg" sx={{ mt: 5 }}>
         <Box
           sx={{
@@ -190,8 +280,38 @@ export default function Dashboard() {
             gap: 3,
           }}
         >
-          <Box sx={{ position: 'relative', mt: 12, mb: 2, pt: 4 }}>
-            <PilotAvatar message={currentUser ? `Ready for takeoff, ${currentUser.email?.split("@")[0]}?` : "Log in to fly!"} />
+          <Box sx={{ 
+            position: 'relative', 
+            mt: 12, 
+            mb: -5, 
+            pt: 4,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            width: '100%',
+            pr: { xs: 2, sm: 4, md: 6 }
+          }}>
+            <PilotAvatar 
+              message={currentUser ? `Ready for takeoff, ${currentUser.email?.split("@")[0]}?` : "Log in to fly!"} 
+              sx={{ position: 'relative', zIndex: 2 }}
+            />
+            <motion.div
+              style={{
+                position: "absolute",
+                top: "2%", 
+                left: 0,
+                zIndex: 1,
+                width: "20vw",
+                maxWidth: "150px",
+                minWidth: "100px",
+              }}
+              animate={planeControls}
+            >
+              <img
+                src="/images/PennyPilot-plane.png"
+                alt="Blue Cartoon Plane"
+                style={{ width: "100%", height: "auto" }}
+              />
+            </motion.div>
           </Box>
           
           <Typography variant="h5" gutterBottom>
@@ -200,14 +320,12 @@ export default function Dashboard() {
           
           {currentUser && (
             <>
-              <Card sx={cardStyle}>
+              <Card sx={{...cardStyle, mb: 4}}>
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" gutterBottom>Budget Overview</Typography>
                     {isLoading ? (
-                      <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                        <CircularProgress size={24} />
-                      </Box>
+                      <LoadingLogo />
                     ) : budgets.length > 0 ? (
                       <>
                         <Typography variant="body1" sx={{ fontSize: '1.2rem', fontWeight: 500, mb: 2 }}>
@@ -259,33 +377,39 @@ export default function Dashboard() {
                       <Typography variant="h6" gutterBottom>
                         {selectedBudget.name} Breakdown
                       </Typography>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                          <Legend 
-                            layout="horizontal"
-                            align="right"
-                            verticalAlign="top"
-                            wrapperStyle={{ paddingBottom: 20 }}
-                          />
-                          <Pie
-                            data={budgetChartData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="55%"
-                            outerRadius={80}
-                            label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
-                            labelLine={false}
-                          >
-                            {budgetChartData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={BUDGET_COLORS[index % BUDGET_COLORS.length]}
+                      {isLoading ? (
+                        <LoadingLogo />
+                      ) : (
+                        <>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                              <Legend 
+                                layout="horizontal"
+                                align="right"
+                                verticalAlign="top"
+                                wrapperStyle={{ paddingBottom: 20 }}
                               />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
+                              <Pie
+                                data={budgetChartData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="55%"
+                                outerRadius={80}
+                                label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                                labelLine={false}
+                              >
+                                {budgetChartData.map((entry, index) => (
+                                  <Cell 
+                                    key={`cell-${index}`} 
+                                    fill={BUDGET_COLORS[index % BUDGET_COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </>
+                      )}
                     </Box>
                   )}
                 </Box>
@@ -311,31 +435,33 @@ export default function Dashboard() {
                   </Box>
                   
                   <Box sx={{ flex: 1, height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                        <Legend 
-                          layout="horizontal"
-                          align="right"
-                          verticalAlign="top"
-                          wrapperStyle={{ paddingBottom: 20 }}
-                        />
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
                         <Pie
                           data={groupExpensesByCategory(deductibleExpenses)}
                           dataKey="value"
                           nameKey="name"
                           cx="50%"
-                          cy="55%"
+                          cy="50%"
                           outerRadius={80}
-                          label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
-                          labelLine={false}
+                          label
                         >
                           {groupExpensesByCategory(deductibleExpenses).map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={DEDUCTION_COLORS[index % DEDUCTION_COLORS.length]}
-                            />
+                            <Cell key={`cell-${index}`} fill={DEDUCTION_COLORS[index % DEDUCTION_COLORS.length]} />
                           ))}
                         </Pie>
+                        <Legend 
+                          layout="horizontal" 
+                          verticalAlign="bottom" 
+                          align="center"
+                          wrapperStyle={{
+                            paddingTop: "20px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-start",
+                            justifyContent: "flex-start"
+                          }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </Box>
