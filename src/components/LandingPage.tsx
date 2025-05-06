@@ -127,7 +127,7 @@ const LandingPage = () => {
         },
       }}
     >
-      <Container maxWidth="lg" sx={{ mt: 10, mb: 8, position: "relative", zIndex: 0 }}>
+      <Container maxWidth="lg" sx={{ mt: 5 }}>
         <Box
           sx={{
             display: "flex",
@@ -135,19 +135,28 @@ const LandingPage = () => {
             alignItems: "center",
             textAlign: "center",
             minHeight: "calc(100vh - 128px)",
-            justifyContent: "center",
             px: { xs: 2, sm: 0 },
+            gap: 2,
           }}
         >
           {/* Header Section */}
-          <Box sx={{ position: "relative", mb: 4, mt: 9 }}>
+          <Box sx={{ 
+            position: 'relative', 
+            mt: 9, 
+            mb: -5, 
+            pt: 2,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            width: '100%',
+            pr: { xs: 2, sm: 4, md: 6 }
+          }}>
             <PilotAvatar
               message={
                 currentUser
                   ? `Ready for takeoff, ${formatUserName(currentUser.email)}?`
                   : "Ready for takeoff? Log in to fly!"
               }
-              sx={{ zIndex: 2 }}
+              sx={{ position: 'relative', zIndex: 2 }}
             />
             <motion.div
               style={{
@@ -169,11 +178,8 @@ const LandingPage = () => {
             </motion.div>
           </Box>
 
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
-            PennyPilot
-          </Typography>
           <Typography variant="h5" gutterBottom>
-            Your Financial Copilot!
+            Welcome, Captain! Your Flight Path:
           </Typography>
 
           {/* Welcome Section */}
