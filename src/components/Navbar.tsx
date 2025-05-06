@@ -115,8 +115,24 @@ export default function Navbar() {
 
   return (
     <>
-      <AppBar position="fixed" color="primary" sx={{ top: 0, left: 0, right: 0, zIndex: 1100 }}>
-        <Toolbar sx={{ minHeight: 64, display: "flex", alignItems: "center" }}>
+      <AppBar 
+        position="fixed" 
+        color="primary" 
+        sx={{ 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          zIndex: 1100,
+          background: 'linear-gradient(90deg, #0d47a1 0%, #1565c0 40%, #2196f3 100%)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 10px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <Toolbar sx={{ 
+          minHeight: 64, 
+          display: "flex", 
+          alignItems: "center",
+          px: { xs: 2, sm: 4 }
+        }}>
           {/* Logo and Title Container */}
           <Box
             sx={{
@@ -124,7 +140,9 @@ export default function Navbar() {
               alignItems: 'center',
               cursor: 'pointer',
               '&:hover': {
-                opacity: 0.8,
+                opacity: 0.9,
+                transform: 'scale(1.02)',
+                transition: 'all 0.2s ease-in-out',
               },
             }}
             onClick={() => handleNavClick(currentUser ? "/dashboard" : "/")}
@@ -161,7 +179,12 @@ export default function Navbar() {
               sx={{ 
                 flexGrow: 1, 
                 display: { xs: "none", sm: "block" },
-                mr: 4
+                mr: 4,
+                fontWeight: 600,
+                letterSpacing: '0.5px',
+                background: 'linear-gradient(45deg, #ffffff 30%, #e3f2fd 90%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
               PennyPilot
@@ -169,7 +192,15 @@ export default function Navbar() {
           </Box>
           {/* Greeting */}
           {currentUser && (
-            <Typography sx={{ mr: 2, display: { xs: "none", sm: "block" } }}>
+            <Typography 
+              sx={{ 
+                mr: 2, 
+                display: { xs: "none", sm: "block" },
+                color: '#e3f2fd',
+                fontWeight: 500,
+                fontSize: '0.95rem',
+              }}
+            >
               Hello, {formatUserName(currentUser.email)}!
             </Typography>
           )}
@@ -183,6 +214,8 @@ export default function Navbar() {
                 sx={{ 
                   mx: 1,
                   position: 'relative',
+                  fontWeight: 500,
+                  letterSpacing: '0.3px',
                   '&::after': {
                     content: '""',
                     position: 'absolute',
@@ -193,6 +226,7 @@ export default function Navbar() {
                     backgroundColor: 'white',
                     transition: 'all 0.3s ease-in-out',
                     transform: 'translateX(-50%)',
+                    borderRadius: '2px',
                   },
                   '&:hover::after': {
                     width: '80%',
@@ -200,7 +234,8 @@ export default function Navbar() {
                   '&:hover': {
                     transform: 'translateY(-1px)',
                     transition: 'all 0.2s ease-in-out',
-                    color: '#ffd700', // Gold color on hover
+                    color: '#ffd700',
+                    textShadow: '0 0 8px rgba(255, 215, 0, 0.3)',
                   },
                 }}
               >
@@ -214,6 +249,8 @@ export default function Navbar() {
                 sx={{ 
                   mx: 1,
                   position: 'relative',
+                  fontWeight: 500,
+                  letterSpacing: '0.3px',
                   '&::after': {
                     content: '""',
                     position: 'absolute',
@@ -224,6 +261,7 @@ export default function Navbar() {
                     backgroundColor: 'white',
                     transition: 'all 0.3s ease-in-out',
                     transform: 'translateX(-50%)',
+                    borderRadius: '2px',
                   },
                   '&:hover::after': {
                     width: '80%',
@@ -231,7 +269,8 @@ export default function Navbar() {
                   '&:hover': {
                     transform: 'translateY(-1px)',
                     transition: 'all 0.2s ease-in-out',
-                    color: '#ffd700', // Gold color on hover
+                    color: '#ffd700',
+                    textShadow: '0 0 8px rgba(255, 215, 0, 0.3)',
                   },
                 }}
               >
@@ -244,6 +283,8 @@ export default function Navbar() {
                 sx={{ 
                   mx: 1,
                   position: 'relative',
+                  fontWeight: 500,
+                  letterSpacing: '0.3px',
                   '&::after': {
                     content: '""',
                     position: 'absolute',
@@ -254,6 +295,7 @@ export default function Navbar() {
                     backgroundColor: 'white',
                     transition: 'all 0.3s ease-in-out',
                     transform: 'translateX(-50%)',
+                    borderRadius: '2px',
                   },
                   '&:hover::after': {
                     width: '80%',
@@ -261,7 +303,8 @@ export default function Navbar() {
                   '&:hover': {
                     transform: 'translateY(-1px)',
                     transition: 'all 0.2s ease-in-out',
-                    color: '#ffd700', // Gold color on hover
+                    color: '#ffd700',
+                    textShadow: '0 0 8px rgba(255, 215, 0, 0.3)',
                   },
                 }}
               >
