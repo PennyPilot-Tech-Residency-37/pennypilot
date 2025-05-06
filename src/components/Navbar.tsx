@@ -117,39 +117,56 @@ export default function Navbar() {
     <>
       <AppBar position="fixed" color="primary" sx={{ top: 0, left: 0, right: 0, zIndex: 1100 }}>
         <Toolbar sx={{ minHeight: 64, display: "flex", alignItems: "center" }}>
-          {/* Logo */}
+          {/* Logo and Title Container */}
           <Box
             sx={{
-              height: 64,
-              width: 200,
-              overflow: "hidden",
-              display: "flex",
-              alignItems: "center",
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.8,
+              },
             }}
+            onClick={() => handleNavClick(currentUser ? "/dashboard" : "/")}
           >
+            {/* Logo */}
             <Box
-              component={animated.div}
-              style={{
-                transform: logoProps.rotate.to((r) => `rotate(${r}deg)`),
-                height: 200,
-                zIndex: 2,
-                pointerEvents: "none",
+              sx={{
+                height: 64,
+                width: 200,
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
               }}
             >
-              <img
-                src="/images/PennyPilot-logo.png"
-                alt="Penny Pilot emblem with golden wings and a central P icon."
-                style={{ height: "100%" }}
-              />
+              <Box
+                component={animated.div}
+                style={{
+                  transform: logoProps.rotate.to((r) => `rotate(${r}deg)`),
+                  height: 200,
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+              >
+                <img
+                  src="/images/PennyPilot-logo.png"
+                  alt="Penny Pilot emblem with golden wings and a central P icon."
+                  style={{ height: "100%" }}
+                />
+              </Box>
             </Box>
+            {/* Title */}
+            <Typography
+              variant="h6"
+              sx={{ 
+                flexGrow: 1, 
+                display: { xs: "none", sm: "block" },
+                mr: 4
+              }}
+            >
+              PennyPilot
+            </Typography>
           </Box>
-          {/* Title */}
-          <Typography
-            variant="h6"
-            sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
-          >
-            PennyPilot
-          </Typography>
           {/* Greeting */}
           {currentUser && (
             <Typography sx={{ mr: 2, display: { xs: "none", sm: "block" } }}>
