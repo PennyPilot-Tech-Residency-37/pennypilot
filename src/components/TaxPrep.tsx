@@ -17,6 +17,10 @@ import {
   IconButton,
   CircularProgress,
   ButtonGroup,
+  TableSortLabel,
+  FormControl,
+  InputLabel,
+  SelectChangeEvent,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -37,7 +41,6 @@ import {
   limit, 
   onSnapshot 
 } from "firebase/firestore";
-import { SelectChangeEvent } from "@mui/material";
 import { alpha } from '@mui/material/styles';
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
@@ -48,6 +51,9 @@ interface DeductibleExpense {
   notes: string;
   createdAt: string;
 }
+
+type SortField = 'deductibleAmount' | 'createdAt' | 'category';
+type SortOrder = 'asc' | 'desc';
 
 const formatUserName = (user: any) => {
   if (!user) return '';
@@ -93,6 +99,9 @@ export default function TaxPrep() {
   const [success, setSuccess] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+  const [sortField, setSortField] = useState<SortField>('createdAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // Predefined categories
   const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Home Office Expenses", "Student Loan Interest", "Mortgage Interest", "Retirement Contributions", "Other"];
@@ -278,6 +287,41 @@ export default function TaxPrep() {
       }}
     />
   );
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const handleCategoryFilterChange = (event: SelectChangeEvent) => {
+    setCategoryFilter(event.target.value);
+  };
+
+  const getFilteredAndSortedExpenses = () => {
+    let filtered = [...deductibleExpenses];
+    
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(expense => expense.category === categoryFilter);
+    }
+    
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'deductibleAmount') {
+        comparison = a.deductibleAmount - b.deductibleAmount;
+      } else if (sortField === 'createdAt') {
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortField === 'category') {
+        comparison = a.category.localeCompare(b.category);
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
@@ -479,26 +523,65 @@ export default function TaxPrep() {
                 borderRadius: 2,
               }}
             >
-              <Typography variant="h6" gutterBottom>
-                Logged Expenses
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Logged Expenses
+                </Typography>
+                <FormControl sx={{ minWidth: 200 }}>
+                  <InputLabel>Filter by Category</InputLabel>
+                  <Select
+                    value={categoryFilter}
+                    onChange={handleCategoryFilterChange}
+                    label="Filter by Category"
+                  >
+                    <MenuItem value="all">All Categories</MenuItem>
+                    {predefinedCategories.map((category) => (
+                      <MenuItem key={category} value={category}>{category}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
               {isLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
                   <LoadingSpinner />
                 </Box>
-              ) : deductibleExpenses.length > 0 ? (
+              ) : getFilteredAndSortedExpenses().length > 0 ? (
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Amount</TableCell>
-                      <TableCell>Category</TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={sortField === 'deductibleAmount'}
+                          direction={sortField === 'deductibleAmount' ? sortOrder : 'asc'}
+                          onClick={() => handleSort('deductibleAmount')}
+                        >
+                          Amount
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={sortField === 'category'}
+                          direction={sortField === 'category' ? sortOrder : 'asc'}
+                          onClick={() => handleSort('category')}
+                        >
+                          Category
+                        </TableSortLabel>
+                      </TableCell>
                       <TableCell>Notes</TableCell>
-                      <TableCell>Date</TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={sortField === 'createdAt'}
+                          direction={sortField === 'createdAt' ? sortOrder : 'asc'}
+                          onClick={() => handleSort('createdAt')}
+                        >
+                          Date
+                        </TableSortLabel>
+                      </TableCell>
                       <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {deductibleExpenses.map((expense) => (
+                    {getFilteredAndSortedExpenses().map((expense) => (
                       <TableRow key={expense.id}>
                         <TableCell>${Number(expense.deductibleAmount).toFixed(2)}</TableCell>
                         <TableCell>{expense.category}</TableCell>
@@ -536,7 +619,9 @@ export default function TaxPrep() {
                 </Table>
               ) : (
                 <Typography color="textSecondary" sx={{ p: 2, textAlign: 'center' }}>
-                  No expenses logged yet.
+                  {categoryFilter !== 'all' 
+                    ? `No expenses found in category "${categoryFilter}"`
+                    : "No expenses logged yet."}
                 </Typography>
               )}
             </Card>
