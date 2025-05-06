@@ -155,9 +155,9 @@ const LandingPage = () => {
                 top: "2%", 
                 left: 0,
                 zIndex: 1,
-                width: "30vw",
-                maxWidth: "200px",
-                minWidth: "120px",
+                width: "20vw",
+                maxWidth: "150px",
+                minWidth: "100px",
               }}
               animate={planeControls}
             >
