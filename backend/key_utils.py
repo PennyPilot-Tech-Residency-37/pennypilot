@@ -25,5 +25,8 @@ def store_key(session, key: str):
     session.commit()
 
 def validate_key(session, input_key: str) -> bool:
-    stored_entry = session.query(KeyStorage).filter_by(hashed_key=hash_key(input_key, stored_entry.salt)).first()
-    return stored_entry is not None if stored_entry else False
+    entries = session.query(KeyStorage).all()
+    for entry in entries:
+        if hash_key(input_key, entry.salt) == entry.hashed_key:
+            return True
+    return False
