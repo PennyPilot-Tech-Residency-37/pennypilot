@@ -16,9 +16,11 @@ import {
   Snackbar,
   IconButton,
   CircularProgress,
+  ButtonGroup,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useAuth } from "../context/auth";
 import { useNavigate } from "react-router-dom";
 import PilotAvatar from "./PilotAvatar";
@@ -228,6 +230,35 @@ export default function TaxPrep() {
     }
   };
 
+  const handleExport = () => {
+    if (!deductibleExpenses.length) {
+      setError("No expenses to export.");
+      return;
+    }
+
+    // Create CSV content
+    const headers = ["Date", "Category", "Amount", "Notes"];
+    const csvContent = [
+      headers.join(","),
+      ...deductibleExpenses.map(expense => [
+        new Date(expense.createdAt).toLocaleDateString(),
+        expense.category,
+        expense.deductibleAmount,
+        `"${expense.notes.replace(/"/g, '""')}"` // Escape quotes in notes
+      ]).join("\n")
+    ].join("\n");
+
+    // Create and download CSV file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `deductible-expenses-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const LoadingSpinner = () => (
     <Box
       component="img"
@@ -386,6 +417,16 @@ export default function TaxPrep() {
                   <Typography variant="h4" sx={{ mb: 2 }}>
                     Total Tax Deductions: ${totalDeductibleSpent.toFixed(2)}
                   </Typography>
+                  <ButtonGroup variant="contained" color="primary">
+                    <Button
+                      variant="contained"
+                      startIcon={<FileDownloadIcon />}
+                      onClick={handleExport}
+                      disabled={!deductibleExpenses.length}
+                    >
+                      Export CSV
+                    </Button>
+                  </ButtonGroup>
                 </Box>
                 
                 <Box sx={{ flex: 1, height: 400 }}>
