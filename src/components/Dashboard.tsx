@@ -277,12 +277,12 @@ export default function Dashboard() {
             textAlign: "center",
             minHeight: "calc(100vh - 128px)",
             px: { xs: 2, sm: 0 },
-            gap: 3,
+            gap: 2,
           }}
         >
           <Box sx={{ 
             position: 'relative', 
-            mt: 12, 
+            mt: 9, 
             mb: -5, 
             pt: 4,
             display: 'flex',
