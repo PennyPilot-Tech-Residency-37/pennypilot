@@ -20,7 +20,7 @@ jobs:
         run: |
           gitleaks detect --source=. --report=gitleaks-report.json
       - name: Upload Gitleaks report
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v3
         with:
           name: gitleaks-report
           path: gitleaks-report.json
