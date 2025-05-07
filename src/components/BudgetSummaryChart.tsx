@@ -1,5 +1,5 @@
 import React from "react";
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
 import {
   Box,
   Typography,
@@ -147,15 +147,15 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
             Budget Breakdown
           </Typography>
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ top: 10, right: 40, bottom: 100, left: 40 }}> {/* Increased bottom margin significantly */}
+            <PieChart margin={{ top: 10, right: 40, bottom: 100, left: 40 }}>
               <Pie
                 dataKey="value"
                 isAnimationActive={false}
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
-                label={({ name, percent, cx, cy, midAngle, outerRadius, index }) => {
+                outerRadius={95}
+                label={({ name, value, cx, cy, midAngle, outerRadius, index }) => {
                   const RADIAN = Math.PI / 180;
                   const radius = outerRadius * 1.3;
                   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -169,7 +169,7 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
                       dominantBaseline="central"
                       fontSize={12}
                     >
-                      {`${name}: ${(percent * 100).toFixed(1)}%`}
+                      {`$${value.toFixed(2)}`}
                     </text>
                   );
                 }}
@@ -179,10 +179,23 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
+              <Tooltip
+                formatter={(value: number, name: string, props: any) => {
+                  const total = chartData.reduce((sum, item) => sum + item.value, 0);
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return [`${percentage}%`, name];
+                }}
+                contentStyle={{
+                  fontSize: "12px",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  background: "rgba(255,255,255,0.95)",
+                }}
+              />
               <Legend
                 verticalAlign="bottom"
                 height={36}
-                wrapperStyle={{ marginTop: 40 }} // Increased margin to move legend much lower
+                wrapperStyle={{ marginTop: 40 }}
               />
             </PieChart>
           </ResponsiveContainer>
