@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
+import sqlalchemy as sa
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
