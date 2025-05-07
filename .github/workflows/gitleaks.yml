@@ -1,4 +1,5 @@
 name: Gitleaks Secret Scan
+
 on:
   push:
     branches: [develop]
