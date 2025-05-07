@@ -1,4 +1,5 @@
 name: Gitleaks Secret Scan
+
 on:
   push:
     branches: [develop]
@@ -19,7 +20,7 @@ jobs:
         run: |
           gitleaks detect --source=. --report=gitleaks-report.json
       - name: Upload Gitleaks report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.0
         with:
           name: gitleaks-report
           path: gitleaks-report.json
