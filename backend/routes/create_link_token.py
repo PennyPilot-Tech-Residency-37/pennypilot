@@ -14,8 +14,8 @@ def setup_create_link_token(app, session):
         data = request.get_json()
         input_key = data.get("key")
 
-        # if not validate_key(session, input_key):
-        #     return jsonify({"error": "Invalid key"}), 403
+        if not validate_key(session, input_key):
+            return jsonify({"error": "Invalid key"}), 403
 
         request_data = LinkTokenCreateRequest(
             client_name="PennyPilot",
