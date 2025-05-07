@@ -5,7 +5,7 @@ import { collection, getDocs, query, where, onSnapshot, orderBy } from "firebase
 import { db } from "../types/firebaseConfig";
 import PilotAvatar from "./PilotAvatar";
 import { useAuth } from "../context/auth";
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
 import { alpha, Theme } from '@mui/material/styles';
 import { useNavigate } from "react-router-dom";
 import { BudgetData } from "../types/types";
@@ -434,32 +434,32 @@ export default function Dashboard() {
                     </Button>
                   </Box>
                   
-                  <Box sx={{ flex: 1, height: 300 }}>
-                    <ResponsiveContainer width="100%" height={300}>
+                  <Box sx={{ flex: 1, height: 300, paddingBottom: 6 }}>
+                    <ResponsiveContainer width="100%" height={400}>
                       <PieChart>
                         <Pie
                           data={groupExpensesByCategory(deductibleExpenses)}
                           dataKey="value"
                           nameKey="name"
                           cx="50%"
-                          cy="50%"
+                          cy="50%" 
                           outerRadius={80}
-                          label
+                          label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                          labelLine={false}
                         >
                           {groupExpensesByCategory(deductibleExpenses).map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={DEDUCTION_COLORS[index % DEDUCTION_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Legend 
-                          layout="horizontal" 
-                          verticalAlign="bottom" 
+                        <Legend
+                          layout="horizontal"
+                          verticalAlign="bottom"
                           align="center"
                           wrapperStyle={{
-                            paddingTop: "20px",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "flex-start",
-                            justifyContent: "flex-start"
+                            paddingTop: "120px", // Further increased to move legend lower into the available space
+                            fontSize: "14px", // Ensure readability
+                            lineHeight: "24px", // Proper spacing between legend items
+                            bottom: 80,
                           }}
                         />
                       </PieChart>
