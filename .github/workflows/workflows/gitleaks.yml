@@ -1,25 +1,25 @@
 name: Gitleaks Secret Scan
-
 on:
   push:
-    branches: [develop]        # Runs on pushes to the develop branch
+    branches: [develop]
   pull_request:
-    branches: [develop]        # Runs on pull requests targeting the develop branch
-
+    branches: [develop]
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
       - name: Install Gitleaks
         run: |
-          curl -sSL https://github.com/zricethezav/gitleaks/releases/download/v8.10.0/gitleaks-linux-amd64-v8.10.0.tar.gz | tar xz -C /usr/local/bin
-
+          curl -sSL https://github.com/zricethezav/gitleaks/releases/download/v8.10.0/gitleaks-linux-amd64-v8.10.0.tar.gz | tar xz
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
       - name: Run Gitleaks scan
         run: |
           gitleaks detect --source=. --report=gitleaks-report.json
-
-      - name: Upload G
+      - name: Upload Gitleaks report
+        uses: actions/upload-artifact@v3
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
