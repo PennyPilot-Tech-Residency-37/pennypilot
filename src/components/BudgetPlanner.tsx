@@ -8,6 +8,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { db } from "../types/firebaseConfig";
 import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
 import { useAuth } from "../context/auth";
+import { usePlaidLink } from 'react-plaid-link';
+import axios from 'axios';
 
 interface Budget {
   id?: string;
@@ -29,12 +31,14 @@ const theme = createTheme({
   },
 });
 
+
 const BudgetBoard = () => {
   const { currentUser } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
   const [showSetup, setShowSetup] = useState(false);
-
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  
   // Fetch budgets from Firestore on mount
   useEffect(() => {
     if (!currentUser) return;
@@ -60,6 +64,25 @@ const BudgetBoard = () => {
     });
     return () => unsubscribe();
   }, [currentUser]);
+
+  useEffect(() => {
+    axios.post('/api/create_link_token', { key: "dev-test-key" })
+      .then(res => setLinkToken(res.data.link_token))
+      .catch(err => console.error('Failed to create link token', err));
+  }, []);
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken || '',
+    onSuccess: (public_token, metadata) => {
+      console.log('Successfully linked bank:', metadata);
+  
+      // Send the public_token to your backend
+      axios.post('/api/exchange_public_token', { public_token, key: "dev-test-key" })
+        .then(res => console.log('Access token stored:', res.data))
+        .catch(err => console.error('Error exchanging token:', err));
+    },
+  });
+  
 
   // Save new budget to Firestore
   const handleFinishSetup = async (data: BudgetData, name: string) => {
@@ -187,6 +210,18 @@ const BudgetBoard = () => {
               onFinish={handleFinishSetup}
             />
           )}
+
+<Button
+  variant="outlined"
+  color="primary"
+  sx={{ mb: 2 }}
+  disabled={!ready}
+  onClick={() => open()}
+>
+  Connect Your Bank Account
+</Button>
+
+
 
           {currentBudget && (
             <Box
