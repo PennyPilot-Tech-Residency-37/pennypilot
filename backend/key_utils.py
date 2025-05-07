@@ -1,9 +1,10 @@
 import hashlib
 import os
 import sqlalchemy as sa
+from base import Base
 from sqlalchemy.orm import sessionmaker
 
-Base = sa.orm.declarative_base()
+# Base = sa.orm.declarative_base()
 
 class KeyStorage(Base):
     __tablename__ = 'keys'

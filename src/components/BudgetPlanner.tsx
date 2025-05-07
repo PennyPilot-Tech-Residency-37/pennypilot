@@ -38,6 +38,7 @@ const BudgetBoard = () => {
   const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
   const [showSetup, setShowSetup] = useState(false);
   const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [linkReady, setLinkReady] = useState(false);
   
   // Fetch budgets from Firestore on mount
   useEffect(() => {
@@ -65,26 +66,37 @@ const BudgetBoard = () => {
     return () => unsubscribe();
   }, [currentUser]);
 
-  useEffect(() => {
-    axios.post('/api/create_link_token', { key: "dev-test-key" })
-      .then(res => setLinkToken(res.data.link_token))
-      .catch(err => console.error('Failed to create link token', err));
-  }, []);
-
   const { open, ready } = usePlaidLink({
     token: linkToken || '',
-    onSuccess: (public_token, metadata) => {
-      console.log('Successfully linked bank:', metadata);
-  
-      // Send the public_token to your backend
-      axios.post('/api/exchange_public_token', { public_token, key: "dev-test-key" })
-        .then(res => console.log('Access token stored:', res.data))
-        .catch(err => console.error('Error exchanging token:', err));
+    onSuccess: async (public_token, metadata) => {
+      try {
+        const res = await axios.post("/api/create_link_token", {
+          public_token,
+          key: 'dev-test-key',
+        });
+        console.log('✅ Access token exchange successful:', res.data);
+      } catch (err) {
+        console.error('❌ Error exchanging token:', err);
+      }
+    },
+    onLoad: () => {
+      setLinkReady(true);
     },
   });
-  
 
-  // Save new budget to Firestore
+  const handleConnectBank = async () => {
+    try {
+      const res = await axios.post("/api/create_link_token", {
+        key: "dev-test-key",
+      });
+      const token = res.data.link_token;
+      setLinkToken(token);
+      console.log("✅ Link token received:", token);
+    } catch (err) {
+      console.error("❌ Failed to fetch link token:", err);
+    }
+  };
+  
   const handleFinishSetup = async (data: BudgetData, name: string) => {
     if (!currentUser) return;
     const newBudget = {
@@ -212,14 +224,23 @@ const BudgetBoard = () => {
           )}
 
 <Button
-  variant="outlined"
+  variant="contained"
   color="primary"
-  sx={{ mb: 2 }}
-  disabled={!ready}
-  onClick={() => open()}
+  onClick={async () => {
+    if (!linkToken) {
+      await handleConnectBank();
+    }
+    // Wait for Plaid to become ready before opening
+    if (ready && linkToken) {
+      open();
+    }
+  }}
 >
   Connect Your Bank Account
 </Button>
+
+
+
 
 
 
