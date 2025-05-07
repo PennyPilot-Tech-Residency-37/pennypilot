@@ -15,7 +15,17 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
   });
 
   return (
-    <Box sx={{ position: "relative", mb: 4, display: "flex", justifyContent: "center", alignItems: "center", width: "100%", ...sx }}>
+    <Box
+      sx={{
+        position: "relative",
+        mb: 4,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        ...sx,
+      }}
+    >
       <Box
         component="img"
         src="/images/pennypilot.png"
@@ -23,16 +33,15 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
           width: { xs: "300px", sm: "350px", md: "450px", lg: "650px" },
           height: "auto",
           objectFit: "contain",
-          maxWidth: "100%"
+          maxWidth: "100%",
         }}
       />
-      <div
-        style={{
+      <Box
+        sx={{
           position: "absolute",
-          top: "-80px",
-          left: "60%",
-          // opacity: bubbleProps.opacity.get(),
-          transform: `translateX(-50%) scale(${bubbleProps.scale.get()})`
+          top: { xs: "-95px", sm: "-100px", md: "-105px" }, // Moved higher
+          left: { xs: "70%", sm: "70%", md: "65%" },
+          transform: `translateX(-50%) scale(${bubbleProps.scale.get()})`,
         }}
       >
         <Paper
@@ -44,11 +53,14 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
             maxWidth: { xs: "220px", sm: "300px", md: "400px" },
           }}
         >
-          <Typography variant="body1" sx={{ wordWrap: "break-word", fontSize: { xs: "1rem", sm: "1.1rem", md: "1.2rem" } }}>
+          <Typography
+            variant="body1"
+            sx={{ wordWrap: "break-word", fontSize: { xs: "1rem", sm: "1.1rem", md: "1.2rem" } }}
+          >
             {message}
           </Typography>
         </Paper>
-      </div>
+      </Box>
     </Box>
   );
 }

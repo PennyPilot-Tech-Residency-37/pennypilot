@@ -21,6 +21,8 @@ import {
   FormControl,
   InputLabel,
   SelectChangeEvent,
+  Grid,
+  InputAdornment,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -42,7 +44,7 @@ import {
   onSnapshot 
 } from "firebase/firestore";
 import { alpha } from '@mui/material/styles';
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
 
 interface DeductibleExpense {
   id?: string;
@@ -76,6 +78,43 @@ const groupExpensesByCategory = (expenses: DeductibleExpense[]) => {
     name,
     value
   }));
+};
+
+// Updated renderPieLabel to show amounts with $
+const renderPieLabel = ({
+  cx,
+  cy,
+  midAngle,
+  outerRadius,
+  percent,
+  index,
+  value,
+}: {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  outerRadius: number;
+  percent: number;
+  index: number;
+  value: number;
+}) => {
+  const RADIAN = Math.PI / 180;
+  const radius = outerRadius + 20;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text
+      x={x}
+      y={y}
+      fill={COLORS[index % COLORS.length]}
+      textAnchor={x > cx ? "start" : "end"}
+      dominantBaseline="central"
+      fontSize={16}
+      fontWeight={400}
+    >
+      ${value.toFixed(2)} {/* Added $ symbol and formatted to 2 decimal places */}
+    </text>
+  );
 };
 
 export default function TaxPrep() {
@@ -323,16 +362,36 @@ export default function TaxPrep() {
     });
   };
 
+  // Calculate total for percentage in tooltip
+  const totalDeductibleValue = groupExpensesByCategory(deductibleExpenses).reduce(
+    (sum, entry) => sum + entry.value,
+    0
+  );
+
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Box sx={{ position: 'relative', mt: 12, mb: 2, pt: 4 }}>
+        <Box sx={{ 
+          position: 'relative', 
+          mt: 8,
+          mb: -4,
+          pt: 4,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          width: '100%',
+          pr: { xs: 2, sm: 4, md: 6 }
+        }}>
           <PilotAvatar
             message={
               currentUser
-                ? `Track your tax deductions, ${formatUserName(currentUser)}!`
+                ? `Ready to track your tax deductions, ${currentUser.email?.split("@")[0]}?`
                 : "Log in to track expenses!"
             }
+            sx={{ 
+              position: 'relative', 
+              zIndex: 2,
+              mb: 4
+            }}
           />
         </Box>
 
@@ -341,7 +400,7 @@ export default function TaxPrep() {
             {/* Entry Form */}
             <Card 
               sx={{ 
-                p: 3,
+                p: 4,
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-4px)',
@@ -349,165 +408,236 @@ export default function TaxPrep() {
                 },
                 border: '1px solid',
                 borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                borderRadius: 2,
+                borderRadius: 3,
+                background: (theme) => `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
               }}
             >
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h5" sx={{ mb: 8, fontWeight: 600, color: 'primary.main' }}>
                 {editingId ? "Edit Deductible Expense" : "Add Deductible Expense"}
               </Typography>
               <form onSubmit={handleSave}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <TextField
-                    name="deductibleAmount"
-                    label="Amount ($)"
-                    type="number"
-                    value={formData.deductibleAmount}
-                    onChange={handleInputChange}
-                    required
-                    fullWidth
-                  />
-
-                  <Select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    displayEmpty
-                    required
-                    fullWidth
-                  >
-                    <MenuItem value="" disabled>Select Category</MenuItem>
-                    {predefinedCategories.map((cat) => (
-                      <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                    ))}
-                  </Select>
-
-                  {formData.category === "Other" && (
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
-                      name="customCategory"
-                      label="Custom Category"
-                      value={formData.customCategory}
+                      name="deductibleAmount"
+                      label="Amount"
+                      type="number"
+                      value={formData.deductibleAmount}
                       onChange={handleInputChange}
                       required
                       fullWidth
-                    />
-                  )}
-
-                  <TextField
-                    name="notes"
-                    label="Notes"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    multiline
-                    rows={3}
-                    fullWidth
-                  />
-
-                  <Box sx={{ display: "flex", gap: 2 }}>
-                    <Button 
-                      type="submit" 
-                      variant="contained" 
-                      color="primary"
+                      InputProps={{
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                      }}
                       sx={{
-                        transition: 'all 0.2s ease-in-out',
-                        '&:active': {
-                          transform: 'scale(0.95)',
-                        },
-                        '&:hover': {
-                          boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
                         },
                       }}
-                    >
-                      {editingId ? "Update" : "Add"} Expense
-                    </Button>
-                    {editingId && (
-                      <Button 
-                        variant="outlined" 
-                        onClick={resetForm}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Category</InputLabel>
+                      <Select
+                        name="category"
+                        value={formData.category}
+                        label="Category"
+                        onChange={handleInputChange}
+                        required
                         sx={{
-                          transition: 'all 0.2s ease-in-out',
-                          '&:active': {
-                            transform: 'scale(0.95)',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            '&:hover': {
+                              borderColor: 'primary.main',
+                            },
                           },
                         }}
                       >
-                        Cancel Edit
+                        <MenuItem value="" disabled>Select Category</MenuItem>
+                        {predefinedCategories.map((cat) => (
+                          <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  {formData.category === "Other" && (
+                    <Grid item xs={12}>
+                      <TextField
+                        name="customCategory"
+                        label="Custom Category"
+                        value={formData.customCategory}
+                        onChange={handleInputChange}
+                        required
+                        fullWidth
+                      />
+                    </Grid>
+                  )}
+                  <Grid item xs={12}>
+                    <TextField
+                      name="notes"
+                      label="Notes"
+                      value={formData.notes}
+                      onChange={handleInputChange}
+                      multiline
+                      rows={3}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Button 
+                        type="submit" 
+                        variant="contained" 
+                        color="primary"
+                        sx={{
+                          py: 1.5,
+                          px: 4,
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontSize: '1.1rem',
+                          boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: (theme) => `0 6px 20px ${alpha(theme.palette.primary.main, 0.6)}`,
+                          },
+                        }}
+                      >
+                        {editingId ? "Update" : "Add"} Expense
                       </Button>
-                    )}
-                  </Box>
-                </Box>
+                      {editingId && (
+                        <Button 
+                          variant="outlined" 
+                          onClick={resetForm}
+                          sx={{
+                            py: 1.5,
+                            px: 4,
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontSize: '1.1rem',
+                          }}
+                        >
+                          Cancel Edit
+                        </Button>
+                      )}
+                    </Box>
+                  </Grid>
+                </Grid>
               </form>
             </Card>
 
-            {/* Summary Card */}
-            <Card 
-              sx={{ 
-                p: 3,
-                transition: 'all 0.3s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
-                },
-                border: '1px solid',
-                borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                borderRadius: 2,
-                background: (theme) => `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
-              }}
-            >
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h6" gutterBottom>
+            {/* Summary Cards */}
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card 
+                  sx={{ 
+                    p: 3,
+                    height: '100%',
+                    transition: 'all 0.3s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+                    },
+                    border: '1px solid',
+                    borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                    borderRadius: 3,
+                    background: (theme) => `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'primary.main' }}>
                     Summary
                   </Typography>
-                  <Typography variant="h4" sx={{ mb: 2 }}>
+                  <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: 'success.main' }}>
                     Total Tax Deductions: ${totalDeductibleSpent.toFixed(2)}
                   </Typography>
-                  <ButtonGroup variant="contained" color="primary">
-                    <Button
-                      variant="contained"
-                      startIcon={<FileDownloadIcon />}
-                      onClick={handleExport}
-                      disabled={!deductibleExpenses.length}
-                    >
-                      Export CSV
-                    </Button>
-                  </ButtonGroup>
-                </Box>
-                
-                <Box sx={{ flex: 1, height: 400 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Deductions by Category
+                  <Button
+                    variant="contained"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleExport}
+                    disabled={!deductibleExpenses.length}
+                    sx={{
+                      py: 1.5,
+                      px: 4,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontSize: '1.1rem',
+                      boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: (theme) => `0 6px 20px ${alpha(theme.palette.primary.main, 0.6)}`,
+                      },
+                    }}
+                  >
+                    Export CSV
+                  </Button>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card 
+                  sx={{ 
+                    p: 3,
+                    height: '100%',
+                    transition: 'all 0.3s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+                    },
+                    border: '1px solid',
+                    borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                    borderRadius: 3,
+                    background: (theme) => `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mt: 6, mb: 8, fontWeight: 800, color: 'primary.main', textAlign: 'center' }}>
+                    Expenses by Category
                   </Typography>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                      <Legend 
-                        layout="horizontal"
-                        align="right"
-                        verticalAlign="top"
-                        wrapperStyle={{ paddingBottom: 20 }}
-                        formatter={(value) => <span style={{ fontSize: '12px' }}>{value}</span>}
-                      />
-                      <Pie
-                        data={groupExpensesByCategory(deductibleExpenses)}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="55%"
-                        outerRadius={80}
-                        label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
-                        labelLine={false}
-                      >
-                        {groupExpensesByCategory(deductibleExpenses).map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Box>
-              </Box>
-            </Card>
+                  <Box sx={{ flex: 1, height: 350 }}>
+                    <ResponsiveContainer width="110%" height={350}>
+                      <PieChart>
+                        <Pie
+                          data={groupExpensesByCategory(deductibleExpenses)}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={95}
+                          label={renderPieLabel}
+                          labelLine={true}
+                        >
+                          {groupExpensesByCategory(deductibleExpenses).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Legend
+                          layout="horizontal" // Horizontal layout for legend
+                          align="center" // Center the legend horizontally
+                          verticalAlign="bottom" // Place legend below the chart
+                          wrapperStyle={{ 
+                            paddingTop: 20, // Add padding to separate legend from pie chart
+                            fontSize: '14px', // Adjust font size for better appearance
+                            lineHeight: '24px', // Ensure proper spacing between legend items
+                            bottom: 5,
+                          }}
+                        />
+                        <Tooltip
+                          formatter={(value: number) => [
+                            `${((value / totalDeductibleValue) * 100).toFixed(1)}%`,
+                            'Percentage'
+                          ]}
+                          contentStyle={{
+                            fontSize: "12px",
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            background: "rgba(255,255,255,0.95)",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </Card>
+              </Grid>
+            </Grid>
 
             {/* Expenses Table */}
             <Card 
