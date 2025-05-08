@@ -1,4 +1,5 @@
 from config import db, app
+import sqlalchemy as sa
 
 class User(db.Model):
     __tablename__ = 'Users'
@@ -77,6 +78,13 @@ class Budget(db.Model):
     target_amount = db.Column(db.Float, nullable=False)
     month = db.Column(db.String(3), nullable=False)
     year = db.Column(db.Integer, nullable=False)
+
+class AccessToken(db.Model):
+    __tablename__ = 'access_tokens'
+    id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.Column(sa.String, nullable=False)
+    access_token = sa.Column(sa.String, nullable=False)
+    item_id = sa.Column(sa.String, nullable=False)
 
 # Creating tables
 
