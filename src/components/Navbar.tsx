@@ -28,19 +28,19 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate(); // For programmatic navigation
 
-  const logoProps = useSpring({
-    from: { rotate: 0 },
-    to: { rotate: 360 },
-    config: { duration: 1000 },
-    reset: true,
-    onRest: () => {
-      logoProps.rotate.set(0);
-    },
-  });
+  // const logoProps = useSpring({
+  //   from: { rotate: 0 },
+  //   to: { rotate: 360 },
+  //   config: { duration: 1000 },
+  //   reset: true,
+  //   onRest: () => {
+  //     logoProps.rotate.set(0);
+  //   },
+  // });
 
-  useEffect(() => {
-    logoProps.rotate.start();
-  }, [location.pathname]);
+  // useEffect(() => {
+  //   logoProps.rotate.start();
+  // }, [location.pathname]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -49,7 +49,7 @@ export default function Navbar() {
   const handleLoginOpen = (path?: string) => {
     if (path) setIntendedPath(path); // Store the intended path
     setLoginOpen(true);
-    logoProps.rotate.start();
+    // logoProps.rotate.start();
   };
 
   const handleLoginClose = () => {
@@ -75,7 +75,7 @@ export default function Navbar() {
       handleLoginOpen(path);
     } else {
       // If logged in, navigate directly and animate logo
-      logoProps.rotate.start();
+      // logoProps.rotate.start();
       navigate(path);
     }
   };
@@ -123,7 +123,7 @@ export default function Navbar() {
           left: 0, 
           right: 0, 
           zIndex: 1100,
-          background: 'linear-gradient(90deg, #0d47a1 0%, #1565c0 40%, #2196f3 100%)',
+          background: '#1976d2',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 10px rgba(0, 0, 0, 0.1)',
         }}
       >
@@ -159,8 +159,13 @@ export default function Navbar() {
             >
               <Box
                 component={animated.div}
+                // style={{
+                //   transform: logoProps.rotate.to((r) => `rotate(${r}deg)`),
+                //   height: 200,
+                //   zIndex: 2,
+                //   pointerEvents: "none",
+                // }}
                 style={{
-                  transform: logoProps.rotate.to((r) => `rotate(${r}deg)`),
                   height: 200,
                   zIndex: 2,
                   pointerEvents: "none",
