@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///pennypilot.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app)
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
