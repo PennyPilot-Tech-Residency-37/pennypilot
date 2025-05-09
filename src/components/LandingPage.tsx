@@ -468,6 +468,7 @@ const LandingPage = () => {
                 },
                 mb: -25,
               }}
+              onClick={() => handleNavigation('/tax-prep')}
             >
               + Tax Prep
             </Button>
