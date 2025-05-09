@@ -1,0 +1,22 @@
+.level-progress {
+    margin: 1rem 0;
+  }
+  
+  .level-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  .badge-placeholder {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    transition: opacity 0.3s ease;
+  }
+  
+  .badge-placeholder.locked {
+    filter: grayscale(100%) brightness(60%);
+    opacity: 0.6;
+  }
+  
