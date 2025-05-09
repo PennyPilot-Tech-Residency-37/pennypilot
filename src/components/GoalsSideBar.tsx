@@ -5,11 +5,21 @@ import CreateGoalButton from "./CreateGoalButton";
 import BadgePreview from "./BadgePreview";
 import LevelProgress from "./LevelProgress";
 import UniformPreview from "./UniformPreview";
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 
 type Props = {
   goals: { id: number; name: string; completed: boolean }[];
   onOpenModal: () => void;
   setActiveGoalId: (id: number) => void;
+  onEditGoal: (id: number, newName: string) => void;
+  onDeleteGoal: (id: number) => void;
 };
 
 const badgeData = [
@@ -85,20 +95,39 @@ const uniformData = [
 
 
 
-const GoalsSidebar: React.FC<Props> = ({ goals, onOpenModal, setActiveGoalId }) => {
+const GoalsSidebar: React.FC<Props> = ({ goals, onOpenModal, setActiveGoalId, onEditGoal, onDeleteGoal }) => {
   const completedGoals = goals.filter(goal => goal.completed).length;
   const xp = goals.length * 10 + completedGoals * 10;
+  
 
   return (
     <div className="goal-sidebar">
       <h2>My Goals</h2>
 
-      {goals.length === 0 && (
-        <p className="empty-state">No goals yet. Get started by setting a goal!</p>
-      )}
+    <CreateGoalButton onOpenModal={onOpenModal} />
+      <Accordion defaultExpanded>
+  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <Typography variant="h6" fontWeight="bold">Goals</Typography>
+  </AccordionSummary>
 
-      <CreateGoalButton onOpenModal={onOpenModal} />
-      <GoalList goals={goals} setActiveGoalId={setActiveGoalId}/>
+  <AccordionDetails>
+    {goals.length === 0 ? (
+      <Typography className="empty-state" sx={{ mb: 2 }}>
+        No goals yet. Get started by setting a goal!
+      </Typography>
+    ) : null}
+
+
+    <GoalList
+      goals={goals}
+      setActiveGoalId={setActiveGoalId}
+      onEditGoal={onEditGoal}
+      onDeleteGoal={onDeleteGoal}
+    />
+  </AccordionDetails>
+</Accordion>
+
+
 
       <hr className="divider" />
 

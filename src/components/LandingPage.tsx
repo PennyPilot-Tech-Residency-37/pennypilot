@@ -88,11 +88,17 @@ const LandingPage = () => {
 
   return (
     <>
+<<<<<<< Updated upstream
       {/* Hero Section with Rotating Images */}
       <Box
         sx={{
           width: '100vw',
           minHeight: { xs: 340, sm: 420, md: 520 },
+=======
+      <Box
+        sx={{
+          width: '100vw',
+>>>>>>> Stashed changes
           py: 0,
           px: 0,
           background: '#e3f0fa',
@@ -104,6 +110,7 @@ const LandingPage = () => {
           overflow: 'hidden',
         }}
       >
+<<<<<<< Updated upstream
         {/* Rotating Images with Fade Transition */}
         {heroImages.map((img, idx) => (
           <Box
@@ -259,6 +266,17 @@ const LandingPage = () => {
         }}
       >
         {/* Left Arrow */}
+=======
+        <img
+          src="/images/PeterPilotHero.png"
+          alt="Peter the Pilot Hero"
+          style={{
+            width: '100vw',
+            height: 'auto',
+            objectFit: 'contain',
+          }}
+        />
+>>>>>>> Stashed changes
         <Box
           onClick={() => {
             setHeroIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length);
@@ -315,7 +333,6 @@ const LandingPage = () => {
           <span style={{ fontWeight: 800 }}>→</span>
         </Box>
       </Box>
-      {/* Cards Section - Full Width */}
       <Box sx={{ backgroundColor: '#e3f0fa', width: '100vw', py: 6, px: { xs: 0, sm: 0, md: 0 }, boxSizing: 'border-box' }}>
         <Box
           sx={{
@@ -327,7 +344,6 @@ const LandingPage = () => {
             width: '100vw',
           }}
         >
-          {/* Budget Planner */}
           <Box
             sx={{
               width: { xs: '98vw', sm: '95vw', md: '92vw' },
@@ -357,7 +373,7 @@ const LandingPage = () => {
               alt="Airplane"
               sx={{
                 position: 'absolute',
-                top: { xs: -50, sm: -150 },
+                top: { xs: -100, sm: -250 },
                 width: { xs: 580, sm: 780, md: 880 },
                 height: 'auto',
                 zIndex: 1,
@@ -384,8 +400,8 @@ const LandingPage = () => {
               variant="contained"
               onClick={() => handleNavigation("/budget")}
               sx={{
-                backgroundColor: '#FFD700', // gold
-                color: '#003366', // dark blue text
+                backgroundColor: '#FFD700',
+                color: '#003366',
                 fontWeight: 'bold',
                 px: 4,
                 py: 1.5,
@@ -401,7 +417,6 @@ const LandingPage = () => {
             </Button>
           </Box>
 
-          {/* Tax Prep */}
           <Box
             sx={{
               width: { xs: '98vw', sm: '95vw', md: '92vw' },
@@ -410,10 +425,15 @@ const LandingPage = () => {
               py: { xs: 8, sm: 10, md: 12 },
               px: 0,
               pb: { xs: 10, sm: 14, md: 18 },
+<<<<<<< Updated upstream
               backgroundColor: '#fbc02d', // gold
               color: '#003366', // navy text
+=======
+              backgroundColor: 'orange',
+              color: '#003366',
+>>>>>>> Stashed changes
               margin: 'auto',
-              borderRadius: '50px', // Prominent rounded edges
+              borderRadius: '50px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -431,8 +451,8 @@ const LandingPage = () => {
               alt="Tax Plane"
               sx={{
                 position: 'absolute',
-                top: { xs: -50, sm: -150 },
-                width: { xs: 500, sm: 700, md: 800 },
+                top: { xs: -100, sm: -200 },
+                width: { xs: 500, sm: 500, md: 700 },
                 height: 'auto',
                 zIndex: 1,
                 opacity: 0.9,
@@ -506,8 +526,8 @@ const LandingPage = () => {
               alt="Goal Path"
               sx={{
                 position: 'absolute',
-                top: { xs: 120, sm: 100 },
-                width: { xs: 150, sm: 180, md: 280 },
+                top: { xs: 120, sm: 50 },
+                width: { xs: 150, sm: 180, md: 240 },
                 height: 'auto',
                 zIndex: 1,
                 opacity: 0.95,
@@ -534,8 +554,8 @@ const LandingPage = () => {
               variant="contained"
               onClick={() => handleNavigation("/goals")}
               sx={{
-                backgroundColor: '#FFD700', // gold
-                color: '#003366', // dark blue text
+                backgroundColor: '#FFD700',
+                color: '#003366',
                 fontWeight: 'bold',
                 px: 4,
                 py: 1.5,

@@ -6,6 +6,7 @@ interface PilotAvatarProps {
   message?: string;
   className?: string;
   sx?: SxProps<Theme>;
+  uniformId?: string;
 }
 
 export default function PilotAvatar({ message, sx }: PilotAvatarProps) {

@@ -1,4 +1,3 @@
-// src/App.tsx
 import { AuthProvider, useAuth } from "./context/auth";
 import React from "react";
 import Navbar from "./components/Navbar";
@@ -8,7 +7,7 @@ import TaxPrep from "./components/TaxPrep";
 import Goals from "./components/Goals";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
-import Footer from "./components/Footer"; // Import the new Footer component
+import Footer from "./components/Footer";
 import { Box } from "@mui/material";
 
 function AppRoutes() {
@@ -33,7 +32,7 @@ function App() {
           <Box sx={{ flex: 1 }}>
             <AppRoutes />
           </Box>
-          <Footer /> {/* Add the Footer component here */}
+          <Footer />
         </Box>
       </BrowserRouter>
     </AuthProvider>
