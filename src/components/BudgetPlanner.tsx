@@ -227,13 +227,23 @@ const BudgetBoard = () => {
           <Box
             sx={{
               position: "relative",
-              width: { xs: '100%', sm: 420, md: 520 },
+              width: { xs: '100%', sm: 400, md: 480 },
               height: "auto",
               mx: "auto",
-              my: 9, // significant vertical space
+              my: 9,
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
+              backgroundColor: "#ffffff",
+              borderRadius: 4,
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.3s ease-in-out",
+              overflow: "hidden",
+              '&:hover': {
+                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)",
+              },
+              p: 4,
             }}
           >
             <Box
@@ -241,39 +251,34 @@ const BudgetBoard = () => {
               src="/images/Bank.png"
               alt="Bank background"
               sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
                 width: "100%",
                 height: "auto",
                 objectFit: "contain",
-                zIndex: 1,
-                background: "transparent",
+                opacity: 0.75,
+                mb: 4,
+                maxHeight: "300px",
               }}
             />
             <Button
               variant="contained"
               color="primary"
               sx={{
-                zIndex: 2,
                 px: 5,
                 py: 2,
-                mt: 18,
                 fontSize: { xs: "1rem", sm: "1.15rem" },
                 fontWeight: 700,
-                borderRadius: 3,
+                borderRadius: 4,
                 boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
-                background: "linear-gradient(90deg, #fbc02d 0%, #1976d2 100%)",
+                background: "#fbc02d",
                 color: "#fff",
-                transition: "all 0.2s ease-in-out",
-                transform: "translateY(0)",
                 '&:hover': {
-                  background: "linear-gradient(90deg, #fbc02d 0%, #1976d2 100%)",
+                  background: "#e6ac00",
                   color: "#fff",
                   boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
                 },
                 '&:active': {
-                  boxShadow: "0 2px 8px rgba(25, 118, 210, 0.2)",
+                  boxShadow: "0 2px 8px rgba(25, 118, 210, 0.18)",
+                  background: "#c49000",
                 },
               }}
               onClick={async () => {
