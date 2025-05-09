@@ -263,11 +263,11 @@ const BudgetBoard = () => {
               variant="contained"
               color="primary"
               sx={{
-                px: 5,
-                py: 2,
-                fontSize: { xs: "1rem", sm: "1.15rem" },
+                px: 3,
+                py: 1.25,
+                fontSize: { xs: "0.95rem", sm: "1rem" },
                 fontWeight: 700,
-                borderRadius: 4,
+                borderRadius: 2,
                 boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
                 background: "#fbc02d",
                 color: "#fff",
