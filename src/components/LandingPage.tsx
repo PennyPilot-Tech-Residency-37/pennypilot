@@ -88,17 +88,11 @@ const LandingPage = () => {
 
   return (
     <>
-<<<<<<< Updated upstream
       {/* Hero Section with Rotating Images */}
       <Box
         sx={{
           width: '100vw',
           minHeight: { xs: 340, sm: 420, md: 520 },
-=======
-      <Box
-        sx={{
-          width: '100vw',
->>>>>>> Stashed changes
           py: 0,
           px: 0,
           background: '#e3f0fa',
@@ -110,7 +104,6 @@ const LandingPage = () => {
           overflow: 'hidden',
         }}
       >
-<<<<<<< Updated upstream
         {/* Rotating Images with Fade Transition */}
         {heroImages.map((img, idx) => (
           <Box
@@ -266,17 +259,6 @@ const LandingPage = () => {
         }}
       >
         {/* Left Arrow */}
-=======
-        <img
-          src="/images/PeterPilotHero.png"
-          alt="Peter the Pilot Hero"
-          style={{
-            width: '100vw',
-            height: 'auto',
-            objectFit: 'contain',
-          }}
-        />
->>>>>>> Stashed changes
         <Box
           onClick={() => {
             setHeroIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length);
@@ -425,13 +407,8 @@ const LandingPage = () => {
               py: { xs: 8, sm: 10, md: 12 },
               px: 0,
               pb: { xs: 10, sm: 14, md: 18 },
-<<<<<<< Updated upstream
               backgroundColor: '#fbc02d', // gold
               color: '#003366', // navy text
-=======
-              backgroundColor: 'orange',
-              color: '#003366',
->>>>>>> Stashed changes
               margin: 'auto',
               borderRadius: '50px',
               display: 'flex',
