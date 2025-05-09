@@ -3,7 +3,8 @@ import { Typography, Paper, Box, SxProps, Theme } from "@mui/material";
 import { useSpring } from "@react-spring/web";
 
 interface PilotAvatarProps {
-  message: string;
+  message?: string;
+  className?: string;
   sx?: SxProps<Theme>;
 }
 
@@ -36,10 +37,11 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
           maxWidth: "100%",
         }}
       />
+      {message && (
       <Box
         sx={{
           position: "absolute",
-          top: { xs: "-95px", sm: "-100px", md: "-105px" }, // Moved higher
+          top: { xs: "-95px", sm: "-100px", md: "-105px" },
           left: { xs: "70%", sm: "70%", md: "65%" },
           transform: `translateX(-50%) scale(${bubbleProps.scale.get()})`,
         }}
@@ -61,6 +63,7 @@ export default function PilotAvatar({ message, sx }: PilotAvatarProps) {
           </Typography>
         </Paper>
       </Box>
+      )}
     </Box>
   );
 }
