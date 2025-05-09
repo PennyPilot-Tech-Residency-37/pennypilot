@@ -340,7 +340,7 @@ const LandingPage = () => {
               minHeight: '80vh',
               py: { xs: 8, sm: 10, md: 12 },
               px: 0,
-              pb: { xs: 10, sm: 14, md: 18 },
+              pb: 2,
               backgroundColor: 'primary.main',
               color: 'white',
               margin: 'auto',
@@ -351,7 +351,7 @@ const LandingPage = () => {
               justifyContent: 'center',
               textAlign: 'center',
               boxSizing: 'border-box',
-              mb: { xs: 6, sm: 8, md: 10 },
+              mb: 0,
               position: 'relative',
               boxShadow: 6,
             }}
