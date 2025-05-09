@@ -223,26 +223,71 @@ const BudgetBoard = () => {
             />
           )}
 
-<Button
-  variant="contained"
-  color="primary"
-  onClick={async () => {
-    if (!linkToken) {
-      await handleConnectBank();
-    }
-    // Wait for Plaid to become ready before opening
-    if (ready && linkToken) {
-      open();
-    }
-  }}
->
-  Connect Your Bank Account
-</Button>
-
-
-
-
-
+          {/* Bank image background with button overlay */}
+          <Box
+            sx={{
+              position: "relative",
+              width: { xs: '100%', sm: 420, md: 520 },
+              height: "auto",
+              mx: "auto",
+              my: 9, // significant vertical space
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/Bank.png"
+              alt="Bank background"
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "auto",
+                objectFit: "contain",
+                zIndex: 1,
+                background: "transparent",
+              }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                zIndex: 2,
+                px: 5,
+                py: 2,
+                mt: 18,
+                fontSize: { xs: "1rem", sm: "1.15rem" },
+                fontWeight: 700,
+                borderRadius: 3,
+                boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
+                background: "linear-gradient(90deg, #fbc02d 0%, #1976d2 100%)",
+                color: "#fff",
+                transition: "all 0.2s ease-in-out",
+                transform: "translateY(0)",
+                '&:hover': {
+                  background: "linear-gradient(90deg, #fbc02d 0%, #1976d2 100%)",
+                  color: "#fff",
+                  boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
+                },
+                '&:active': {
+                  boxShadow: "0 2px 8px rgba(25, 118, 210, 0.2)",
+                },
+              }}
+              onClick={async () => {
+                if (!linkToken) {
+                  await handleConnectBank();
+                }
+                if (ready && linkToken) {
+                  open();
+                }
+              }}
+            >
+              Connect Your Bank Account
+            </Button>
+          </Box>
 
           {currentBudget && (
             <Box
