@@ -25,7 +25,6 @@ type FormGoalData = {
 
 const GoalsPage = () => {
   const [goals, setGoals] = useState<GoalInput[]>(() => {
-    // ✅ Load and rehydrate goals from localStorage
     const stored = localStorage.getItem("goals");
     if (!stored) return [];
 
@@ -49,7 +48,6 @@ const GoalsPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ✅ Persist to localStorage
   useEffect(() => {
     localStorage.setItem("goals", JSON.stringify(goals));
   }, [goals]);
@@ -60,7 +58,6 @@ const GoalsPage = () => {
     }
   }, [activeGoalId]);
 
-  // ✅ Set a fallback goal if localStorage is empty or invalid
   useEffect(() => {
     if (goals.length > 0 && !goals.find((g) => g.id === activeGoalId)) {
       setActiveGoalId(goals[0].id);
@@ -78,16 +75,28 @@ const GoalsPage = () => {
     setGoals(updatedGoals);
     setActiveGoalId(newGoal.id);
   };
+  const handleEditGoal = (id: number, updatedName: string) => {
+    setGoals((prev) =>
+      prev.map((goal) => (goal.id === id ? { ...goal, name: updatedName } : goal))
+    );
+  };
+  
+  const handleDeleteGoal = (id: number) => {
+    setGoals((prev) => prev.filter((goal) => goal.id !== id));
+  };
+  
 
   const activeGoal = goals.find((goal) => goal.id === activeGoalId);
 
   return (
     <div className="goals-page-container">
-      <GoalsSidebar
-        goals={goals}
-        onOpenModal={() => setIsModalOpen(true)}
-        setActiveGoalId={setActiveGoalId}
-      />
+<GoalsSidebar
+  goals={goals}
+  onOpenModal={() => setIsModalOpen(true)}
+  setActiveGoalId={setActiveGoalId}
+  onEditGoal={handleEditGoal}
+  onDeleteGoal={handleDeleteGoal}
+/>
 
       {activeGoal && (
         <GoalsPath
