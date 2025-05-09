@@ -34,9 +34,7 @@ export default function LoginModal({ open, onClose, intendedPath }: LoginModalPr
       await signInWithEmailAndPassword(auth, email, password);
       setError("");
       onClose();
-      if (intendedPath) {
-        navigate(intendedPath); // Navigate to intended path after login
-      }
+      navigate('/dashboard');
     } catch (err) {
       setError("Failed to log in. Check your credentials.");
     }
@@ -51,9 +49,7 @@ export default function LoginModal({ open, onClose, intendedPath }: LoginModalPr
       await createUserWithEmailAndPassword(auth, email, password);
       setError("");
       onClose();
-      if (intendedPath) {
-        navigate(intendedPath); // Navigate to intended path after signup
-      }
+      navigate('/dashboard');
     } catch (err) {
       setError("Failed to sign up. Try a different email.");
     }
