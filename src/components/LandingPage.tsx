@@ -82,7 +82,7 @@ const LandingPage = () => {
 
   const cardStyle = {
     p: 3,
-    mb: 4,
+    mb: 0,
     width: { xs: "100%", sm: "90%", md: "70%", lg: "60%" },
     transition: 'all 0.3s ease-in-out',
     '&:hover': {
@@ -107,182 +107,310 @@ const LandingPage = () => {
   };
 
   return (
-    <Box
-      sx={{
-        position: "relative",
-        minHeight: "100vh",
-        overflowX: "hidden",
-        "&::before": {
-          content: '""',
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundImage: "url(/images/PennyPilot-cloud-background.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          opacity: 0.5,
-          zIndex: -1,
-        },
-      }}
-    >
-      <Container maxWidth="lg" sx={{ mt: 5 }}>
+    <>
+      {/* Hero Section Image as Section */}
+      <Box
+        sx={{
+          width: '100vw',
+          py: 0, // Unchanged
+          px: 0, // Unchanged
+          background: '#e3f0fa',
+          boxSizing: 'border-box',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
+        }}
+      >
+        <img
+          src="/images/PeterPilotHero.png"
+          alt="Peter the Pilot Hero"
+          style={{
+            width: '100%',
+            maxWidth: 1200,
+            height: 'auto',
+            objectFit: 'contain',
+          }}
+        />
+        {/* Gold Get Started Button Overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: { xs: '62%', sm: '65%' },
+            left: { xs: '4%', sm: '4%' },
+            zIndex: 2,
+            width: { xs: 220, sm: 260 },
+            height: 70,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Button
+            variant="contained"
+            onClick={handleLoginOpen}
+            sx={{
+              background: '#FFD700',
+              color: '#1a1a1a',
+              fontWeight: 'bold',
+              fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+              px: { xs: 2, sm: 3, md: 4 },
+              py: { xs: 1, sm: 1.25, md: 1.5 },
+              minWidth: { xs: 140, sm: 180, md: 220 },
+              '&:hover': {
+                background: '#FFC300',
+              },
+              '&:active': {
+                transform: 'scale(0.96)',
+              },
+            }}
+          >
+            Get Started
+          </Button>
+        </Box>
+      </Box>
+      {/* Cards Section - Full Width */}
+      <Box sx={{ backgroundColor: '#e3f0fa', width: '100vw', py: 6, px: { xs: 0, sm: 0, md: 0 }, boxSizing: 'border-box' }}>
         <Box
           sx={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
-            minHeight: "calc(100vh - 128px)",
-            px: { xs: 2, sm: 0 },
             gap: 2,
+            width: '100vw',
           }}
         >
-          {/* Header Section */}
-          <Box sx={{ 
-            position: 'relative', 
-            mt: 9, 
-            mb: -5, 
-            pt: 2,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            width: '100%',
-            pr: { xs: 2, sm: 4, md: 6 }
-          }}>
-            <PilotAvatar
-              message={
-                currentUser
-                  ? `Ready for takeoff, ${formatUserName(currentUser.email)}?`
-                  : "Ready for takeoff? Log in to fly!"
-              }
-              sx={{ position: 'relative', zIndex: 2 }}
-            />
-            <motion.div
-              style={{
-                position: "absolute",
-                top: "2%", 
-                left: 0,
+          {/* Budget Planner */}
+          <Box
+            sx={{
+              width: { xs: '98vw', sm: '95vw', md: '92vw' },
+              maxWidth: 1200,
+              minHeight: '80vh',
+              py: { xs: 8, sm: 10, md: 12 },
+              px: 0,
+              pb: { xs: 10, sm: 14, md: 18 },
+              backgroundColor: 'primary.main',
+              color: 'white',
+              margin: 'auto',
+              borderRadius: '50px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              boxSizing: 'border-box',
+              mb: { xs: 6, sm: 8, md: 10 },
+              position: 'relative',
+              boxShadow: 6,
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/Airplane.png"
+              alt="Airplane"
+              sx={{
+                position: 'absolute',
+                top: { xs: -50, sm: -150 },
+                width: { xs: 580, sm: 780, md: 880 },
+                height: 'auto',
                 zIndex: 1,
-                width: "20vw",
-                maxWidth: "150px",
-                minWidth: "100px",
+                opacity: 0.95,
+                pointerEvents: 'none',
               }}
-              animate={planeControls}
+            />
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
+              Take Control of Your Money. One Click at a Time.
+            </Typography>
+            <br /><br />
+            <Typography
+              sx={{
+                mb: 3,
+                fontSize: { xs: '1rem', sm: '1.125rem' },
+                maxWidth: 600,
+                color: 'white',
+              }}
             >
-              <img
-                src="/images/PennyPilot-plane.png"
-                alt="Blue Cartoon Plane"
-                style={{ width: "100%", height: "auto" }}
-              />
-            </motion.div>
+              Whether you're saving for a dream or just trying to make ends meet, our budget tool helps you track income, cut spending leaks, and build smart financial habits — all in one place.
+            </Typography>
+            <br /><br />
+            <Button
+              variant="contained"
+              onClick={() => handleNavigation("/budget")}
+              sx={{
+                backgroundColor: '#FFD700', // gold
+                color: '#003366', // dark blue text
+                fontWeight: 'bold',
+                px: 4,
+                py: 1.5,
+                borderRadius: '12px',
+                boxShadow: 3,
+                '&:hover': {
+                  backgroundColor: '#FFC400',
+                },
+                mb: -25,
+              }}
+            >
+              + Start Budgeting
+            </Button>
           </Box>
 
-          <Typography variant="h5" gutterBottom>
-            Welcome, Captain! Your Flight Path:
-          </Typography>
-
-          {/* Welcome Section */}
-          <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Welcome, Captain! Your Flight Path:
-              </Typography>
-              {currentUser ? (
-                <Typography>
-                  Chart your course with PennyPilot's tools below.
-                </Typography>
-              ) : (
-                <>
-                  <Typography sx={{ mb: 2 }}>
-                    Please log in to see your flight path.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleLoginOpen}
-                    sx={buttonStyle}
-                  >
-                    + Log In
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Budget Planner */}
-          <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Budget Planner
-              </Typography>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                Chart Your Course with a Budget!
-              </Typography>
-              <Typography sx={{ mb: 2 }}>
-                Plan your income and expenses easily.
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleNavigation("/budget")}
-                sx={buttonStyle}
-              >
-                + Start Budgeting
-              </Button>
-            </CardContent>
-          </Card>
-
           {/* Tax Prep */}
-          <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Tax Preparation
-              </Typography>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                Clear the Runway for Tax Savings!
-              </Typography>
-              <Typography sx={{ mb: 2 }}>
-                Save for taxes effortlessly.
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleNavigation("/tax-prep")}
-                sx={buttonStyle}
-              >
-                + Tax Prep
-              </Button>
-            </CardContent>
-          </Card>
+          <Box
+            sx={{
+              width: { xs: '98vw', sm: '95vw', md: '92vw' },
+              maxWidth: 1200,
+              minHeight: '80vh',
+              py: { xs: 8, sm: 10, md: 12 },
+              px: 0,
+              pb: { xs: 10, sm: 14, md: 18 },
+              backgroundColor: 'orange', // gold
+              color: '#003366', // navy text
+              margin: 'auto',
+              borderRadius: '50px', // Prominent rounded edges
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              boxSizing: 'border-box',
+              mb: { xs: 6, sm: 8, md: 10 },
+              position: 'relative',
+              boxShadow: 6,
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/Airplane2.png"
+              alt="Tax Plane"
+              sx={{
+                position: 'absolute',
+                top: { xs: -50, sm: -150 },
+                width: { xs: 500, sm: 700, md: 800 },
+                height: 'auto',
+                zIndex: 1,
+                opacity: 0.9,
+                pointerEvents: 'none',
+              }}
+            />
+            <br /><br /><br /><br /><br /><br /> 
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
+              Clear the Runway for Tax Savings<br /><small>Enjoy Effortless Tax Preparation!</small>
+            </Typography>
+            <br /><br />
+            <Typography
+              sx={{
+                mb: 3,
+                fontSize: { xs: '1rem', sm: '1.125rem' },
+                maxWidth: 600,
+                color: '#003366',
+              }}
+            >
+              Log deductible expenses, track totals, and take the stress out of tax season — all in one streamlined tool.
+            </Typography>
+            <br /><br />
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                fontWeight: 'bold',
+                px: 4,
+                py: 1.5,
+                borderRadius: '12px',
+                boxShadow: 3,
+                backgroundColor: '#003366',
+                color: '#fff',
+                '&:hover': {
+                  backgroundColor: '#002244',
+                },
+                mb: -25,
+              }}
+            >
+              + Tax Prep
+            </Button>
+          </Box>
 
           {/* Financial Goals */}
-          <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Financial Goals
-              </Typography>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                Set Your Sights on Financial Goals!
-              </Typography>
-              <Typography sx={{ mb: 2 }}>
-                Track progress toward your dreams.
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleNavigation("/goals")}
-                sx={buttonStyle}
-              >
-                + Goals
-              </Button>
-            </CardContent>
-          </Card>
+          <Box
+            sx={{
+              width: { xs: '98vw', sm: '95vw', md: '92vw' },
+              maxWidth: 1200,
+              minHeight: '80vh',
+              py: { xs: 8, sm: 10, md: 12 },
+              px: 0,
+              pb: { xs: 10, sm: 14, md: 18 },
+              backgroundColor: 'primary.main',
+              color: 'white',
+              margin: 'auto',
+              borderRadius: '50px', // Prominent rounded edges
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              boxSizing: 'border-box',
+              mb: { xs: 6, sm: 8, md: 10 },
+              position: 'relative',
+              boxShadow: 6,
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/Badge.png"
+              alt="Goal Path"
+              sx={{
+                position: 'absolute',
+                top: { xs: 120, sm: 100 },
+                width: { xs: 150, sm: 180, md: 280 },
+                height: 'auto',
+                zIndex: 1,
+                opacity: 0.95,
+                pointerEvents: 'none',
+              }}
+            />
+            <br /><br />
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#FFD700' }}>
+              Achieve More, One Milestone at a Time.
+            </Typography>
+            <br /><br />
+            <Typography
+              sx={{
+                mb: 3,
+                fontSize: { xs: '1rem', sm: '1.125rem' },
+                maxWidth: 600,
+                color: '#FFC400',
+              }}
+            >
+              Track your financial dreams with purpose. Our goals feature turns saving into a journey — with visual progress, motivating badges, and milestones that keep you moving forward.
+            </Typography>
+            <br /><br />
+            <Button
+              variant="contained"
+              onClick={() => handleNavigation("/goals")}
+              sx={{
+                backgroundColor: '#FFD700', // gold
+                color: '#003366', // dark blue text
+                fontWeight: 'bold',
+                px: 4,
+                py: 1.5,
+                borderRadius: '12px',
+                boxShadow: 3,
+                '&:hover': {
+                  backgroundColor: '#FFC400',
+                },
+                mb: -25,
+              }}
+            >
+              + Set a Goal
+            </Button>
+          </Box>
 
           <LoginModal open={loginOpen} onClose={handleLoginClose} />
         </Box>
-      </Container>
-    </Box>
+      </Box>
+    </>
   );
 };
 
