@@ -602,24 +602,7 @@ export default function TaxPrep() {
                           cx="50%"
                           cy="50%"
                           outerRadius={95}
-                          label={({ value, cx, cy, midAngle, outerRadius, index }) => {
-                            const RADIAN = Math.PI / 180;
-                            const radius = outerRadius * 1.3;
-                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                            return (
-                              <text
-                                x={x}
-                                y={y}
-                                fill={COLORS[index % COLORS.length]}
-                                textAnchor={x > cx ? "start" : "end"}
-                                dominantBaseline="central"
-                                fontSize={12}
-                              >
-                                {`$${value.toFixed(2)}`}
-                              </text>
-                            );
-                          }}
+                          label={renderPieLabel}
                           labelLine={true}
                         >
                           {groupExpensesByCategory(deductibleExpenses).map((entry, index) => (

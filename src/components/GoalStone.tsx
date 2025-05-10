@@ -1,23 +1,45 @@
 import React from "react";
 import "./Goals.css";
-// import PilotAvatar from "./PilotAvatar";
+import PilotAvatar from "./PilotAvatar";
 
 type GoalStoneProps = {
-  position: "left" | "right";
-  status: "completed" | "current" | "locked";
+  position: "left" | "right" | "start";
+  status: "completed" | "current" | "locked" | "start";
   showAvatar: boolean;
+  onClick?: () => void;
 };
 
-const GoalStone: React.FC<GoalStoneProps> = ({ position, status, showAvatar }) => {
-  return (
-    <div className={`goal-stone-wrapper ${position}`}>
-      {/* {showAvatar && (
-        <PilotAvatar message=""/>
-      )} */}
+const GoalStone: React.FC<GoalStoneProps> = ({
+  position,
+  status,
+  showAvatar,
+  onClick,
+}) => {
+  const isCurrent = status === "current";
 
-      <div className={`goal-stone ${status}`}>
+  return (
+<div className={`goal-stone-wrapper ${position}`}>
+  <div className="goal-stone-container">
+    {showAvatar && (
+      <div className="peter-wrapper">
+        <PilotAvatar sx={{ width: "300px" }} />
       </div>
-    </div>
+    )}
+
+    <img
+      src={`/images/stone-${status}.png`}
+      alt={`${status} stepping stone`}
+      className={`goal-stone-img ${status}`}
+    />
+
+    {isCurrent && (
+      <button className="complete-step-button" onClick={onClick}>
+        ✅
+      </button>
+    )}
+  </div>
+</div>
+
   );
 };
 

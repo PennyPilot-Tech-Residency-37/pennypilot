@@ -1,4 +1,5 @@
 from config import db, app
+import sqlalchemy as sa
 
 class AccessToken(db.Model):
     __tablename__ = 'access_tokens'

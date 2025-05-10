@@ -40,3 +40,8 @@
 .read-the-docs {
   color: #888;
 }
+
+body, html {
+  width: 100%;
+  overflow-x: hidden;
+}

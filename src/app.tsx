@@ -7,6 +7,9 @@ import TaxPrep from "./components/TaxPrep";
 import Goals from "./components/Goals";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
+import Footer from "./components/Footer";
+import { Box } from "@mui/material";
+
 function AppRoutes() {
   const { currentUser } = useAuth();
   return (
@@ -19,14 +22,21 @@ function AppRoutes() {
     </Routes>
   );
 }
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Navbar />
-        <AppRoutes />
+        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+          <Navbar />
+          <Box sx={{ flex: 1 }}>
+            <AppRoutes />
+          </Box>
+          <Footer />
+        </Box>
       </BrowserRouter>
     </AuthProvider>
   );
 }
+
 export default App;
