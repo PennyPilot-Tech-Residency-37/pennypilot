@@ -13,7 +13,7 @@
 				"method": "POST",
 				"header": [],
 				"url": {
-					"raw": "http://pennypilotapp.com/create_link_token",
+					"raw": "https://pennypilotapp.com/create_link_token",
 					"protocol": "http",
 					"host": [
 						"127",
