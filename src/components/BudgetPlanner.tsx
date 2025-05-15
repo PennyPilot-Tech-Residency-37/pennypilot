@@ -912,16 +912,19 @@ const BudgetBoard = () => {
                       title="Income"
                       items={currentBudget.data.income}
                       onItemsChange={(items) => handleBudgetUpdate("income", items)}
+                      transactions={transactions}
                     />
                     <BudgetGroup
                       title="Expenses"
                       items={currentBudget.data.expenses}
                       onItemsChange={(items) => handleBudgetUpdate("expenses", items)}
+                      transactions={transactions}
                     />
                     <BudgetGroup
                       title="Savings"
                       items={currentBudget.data.savings}
                       onItemsChange={(items) => handleBudgetUpdate("savings", items)}
+                      transactions={transactions}
                     />
                   </Box>
                 </Grid>
