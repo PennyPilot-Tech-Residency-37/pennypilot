@@ -45,6 +45,7 @@ import {
 } from "firebase/firestore";
 import { alpha } from '@mui/material/styles';
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import { usePlaid } from "../context/PlaidContext";
 
 interface DeductibleExpense {
   id?: string;
@@ -120,6 +121,7 @@ const renderPieLabel = ({
 export default function TaxPrep() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const { fetchLinkToken, openPlaid, ready } = usePlaid();
 
   // Form state
   const initialFormState = {
@@ -367,6 +369,18 @@ export default function TaxPrep() {
     (sum, entry) => sum + entry.value,
     0
   );
+
+  const handleConnectBank = async () => {
+    await fetchLinkToken();
+    const waitForReady = async () => {
+      if (ready) {
+        openPlaid();
+      } else {
+        setTimeout(waitForReady, 100);
+      }
+    };
+    waitForReady();
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>

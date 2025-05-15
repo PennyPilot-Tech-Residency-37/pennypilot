@@ -3,6 +3,8 @@ import GoalsPath from "./GoalsPath";
 import GoalsSidebar from "./GoalsSideBar";
 import CreateGoalModal from "./CreateGoalModal";
 import "./Goals.css";
+import { usePlaid } from "../context/PlaidContext";
+import { Button } from "@mui/material";
 
 type GoalInput = {
   id: number;
@@ -48,6 +50,8 @@ const GoalsPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const { fetchLinkToken, openPlaid, ready } = usePlaid();
+
   useEffect(() => {
     localStorage.setItem("goals", JSON.stringify(goals));
   }, [goals]);
@@ -87,6 +91,18 @@ const GoalsPage = () => {
   
 
   const activeGoal = goals.find((goal) => goal.id === activeGoalId);
+
+  const handleConnectBank = async () => {
+    await fetchLinkToken();
+    const waitForReady = async () => {
+      if (ready) {
+        openPlaid();
+      } else {
+        setTimeout(waitForReady, 100);
+      }
+    };
+    waitForReady();
+  };
 
   return (
     <div className="goals-page-container">
