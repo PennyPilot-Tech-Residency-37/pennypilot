@@ -8,7 +8,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { db } from "../types/firebaseConfig";
 import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
 import { useAuth } from "../context/auth";
-import { usePlaid } from "../context/PlaidContext";
+import { usePlaidLink } from 'react-plaid-link';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -54,7 +54,6 @@ interface BudgetAlert {
   message: string;
   triggered: boolean;
 }
-
 // Custom MUI theme for consistency
 const theme = createTheme({
   spacing: 8,
@@ -67,8 +66,6 @@ const theme = createTheme({
     background: { default: "#fafafa" },
   },
 });
-
-
 const BudgetBoard = () => {
   const { currentUser } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>(() => {
@@ -92,16 +89,9 @@ const BudgetBoard = () => {
     }
   });
   const [showSetup, setShowSetup] = useState(false);
-  const [accounts, setAccounts] = useState<any[]>(() => {
-    const stored = localStorage.getItem("bankAccounts");
-    if (!stored) return [];
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error("Failed to parse stored bank accounts:", e);
-      return [];
-    }
-  });
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [linkReady, setLinkReady] = useState(false);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
@@ -120,55 +110,135 @@ const BudgetBoard = () => {
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [newAlert, setNewAlert] = useState<Partial<BudgetAlert>>({});
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const { fetchLinkToken, openPlaid, ready } = usePlaid();
   const [editBudgetId, setEditBudgetId] = useState<string | null>(null);
   const [editBudgetName, setEditBudgetName] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
   
-  // Save budgets to localStorage whenever they change
+  // 1. Load budgets from localStorage on mount (before Firestore)
+  useEffect(() => {
+    const storedBudgets = localStorage.getItem("budgets");
+    if (storedBudgets) {
+      try {
+        const parsed = JSON.parse(storedBudgets);
+        setBudgets(parsed);
+        if (parsed.length > 0) {
+          setCurrentBudget(parsed[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse stored budgets from localStorage:", e);
+      }
+    }
+  }, []);
+
+  // 2. Save budgets to localStorage on every change
   useEffect(() => {
     localStorage.setItem("budgets", JSON.stringify(budgets));
   }, [budgets]);
 
-  // Save current budget to localStorage whenever it changes
+  // 3. Load bank accounts from localStorage on mount
   useEffect(() => {
-    if (currentBudget) {
-      localStorage.setItem("currentBudget", JSON.stringify(currentBudget));
+    const storedAccounts = localStorage.getItem("bankAccounts");
+    if (storedAccounts) {
+      try {
+        setAccounts(JSON.parse(storedAccounts));
+      } catch (e) {
+        console.error("Failed to parse stored bank accounts from localStorage:", e);
+      }
     }
-  }, [currentBudget]);
+  }, []);
 
-  // Save accounts to localStorage whenever they change
+  // 4. Save bank accounts to localStorage on every change
   useEffect(() => {
     localStorage.setItem("bankAccounts", JSON.stringify(accounts));
   }, [accounts]);
 
-  const handleFinishSetup = async (data: BudgetData, name: string) => {
-    const newBudget = {
-      id: Date.now().toString(),
-      name: name || `Budget ${budgets.length + 1}`,
-      data: {
-        income: data.income || [],
-        expenses: data.expenses || [],
-        savings: data.savings || [],
-      },
-      createdAt: new Date().toISOString(),
-    };
-    setBudgets(prev => {
-      const updated = [...prev, newBudget];
-      localStorage.setItem("budgets", JSON.stringify(updated));
-      return updated;
+  // Fetch budgets from Firestore on mount
+  useEffect(() => {
+    if (!currentUser) return;
+    const budgetRef = collection(db, "users", currentUser.uid, "budget");
+    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
+    const unsubscribe = onSnapshot(budgetQuery, (snapshot) => {
+      const fetchedBudgets = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name || `Budget ${doc.id}`,
+        data: {
+          income: doc.data().income || [],
+          expenses: doc.data().expenses || [],
+          savings: doc.data().savings || [],
+        },
+        createdAt: doc.data().createdAt,
+      })) as Budget[];
+      setBudgets(fetchedBudgets);
+      if (fetchedBudgets.length > 0) {
+        setCurrentBudget(fetchedBudgets[0]);
+      } else {
+        setCurrentBudget(null);
+      }
     });
-    setCurrentBudget(newBudget);
-    localStorage.setItem("currentBudget", JSON.stringify(newBudget));
-    setShowSetup(false);
-  };
+    return () => unsubscribe();
+  }, [currentUser]);
 
-  // Update budget
-  const handleBudgetUpdate = (
+  const { open, ready } = usePlaidLink({
+    token: linkToken || '',
+    onSuccess: async (public_token, metadata) => {
+      try {
+        const res = await axios.post("/api/exchange_public_token", {
+          public_token,
+          key: 'dev-test-key',
+          user_id: currentUser?.uid,
+        });
+        console.log('✅ Access token exchange successful:', res.data);
+      } catch (err) {
+        console.error('❌ Error exchanging token:', err);
+      }
+    },
+    onLoad: () => {
+      setLinkReady(true);
+    },
+  });
+
+  const handleConnectBank = async () => {
+    try {
+      const res = await axios.post("/api/create_link_token", {
+        key: "dev-test-key",
+        user_id: currentUser?.uid,
+            });
+        const token = res.data.link_token;
+        setLinkToken(token);
+        console.log("✅ Link token received:", token);
+      } catch (err) {
+        console.error("❌ Failed to fetch link token:", err);
+      }
+    };
+
+    const handleFinishSetup = async (data: BudgetData, name: string) => {
+      const newBudget = {
+        id: Date.now().toString(),
+        name: name || `Budget ${budgets.length + 1}`,
+        data: {
+          income: data.income || [],
+          expenses: data.expenses || [],
+          savings: data.savings || [],
+        },
+        createdAt: new Date().toISOString(),
+      };
+      setBudgets(prev => {
+        const updated = [...prev, newBudget];
+        localStorage.setItem("budgets", JSON.stringify(updated));
+        return updated;
+      });
+      setCurrentBudget(newBudget);
+      localStorage.setItem("currentBudget", JSON.stringify(newBudget));
+      setShowSetup(false);
+    };
+
+  // Update budget in Firestore
+  const handleBudgetUpdate = async (
     type: "income" | "expenses" | "savings",
     items: { name: string; amount: string; spent?: string }[]
   ) => {
-    if (!currentBudget) return;
+    if (!currentBudget || !currentUser) return;
     const updatedBudget = {
       ...currentBudget,
       data: {
@@ -176,12 +246,22 @@ const BudgetBoard = () => {
         [type]: items,
       },
     };
+    if (currentBudget.id) {
+      const budgetRef = doc(db, "users", currentUser.uid, "budget", currentBudget.id);
+      await updateDoc(budgetRef, {
+        name: updatedBudget.name,
+        income: updatedBudget.data.income,
+        expenses: updatedBudget.data.expenses,
+        savings: updatedBudget.data.savings,
+        createdAt: updatedBudget.createdAt || new Date().toISOString(),
+      });
+    }
     setCurrentBudget(updatedBudget);
     setBudgets(budgets.map((b) => (b.id === currentBudget.id ? updatedBudget : b)));
   };
 
-  const handleBudgetSelect = (budgetData: BudgetData) => {
-    const selectedBudget = budgets.find((b) => b.data === budgetData);
+  const handleBudgetSelect = (budget: BudgetData) => {
+    const selectedBudget = budgets.find((b) => b.data === budget);
     if (selectedBudget) {
       setCurrentBudget(selectedBudget);
     }
@@ -190,8 +270,6 @@ const BudgetBoard = () => {
   const handleCreateNewBudget = () => {
     setShowSetup(true);
   };
-
-  // Fetch accounts from API
   const fetchAccounts = async () => {
     if (!currentUser) return;
     setLoadingAccounts(true);
@@ -217,7 +295,6 @@ const BudgetBoard = () => {
       fetchAccounts();
     }
   }, [currentUser]);
-
   // Pie chart helpers (unchanged)
   const COLORS = ["#1976d2", "#f57c00", "#fbc02d"];
   function getChartData(data: BudgetData) {
@@ -422,24 +499,6 @@ const BudgetBoard = () => {
     }
   };
 
-  const handleConnectBank = async () => {
-    await fetchLinkToken();
-    // Always try to open Plaid, even if ready is not true yet
-    const tryOpen = () => {
-      if (ready) {
-        openPlaid();
-      } else {
-        setTimeout(tryOpen, 100);
-      }
-    };
-    tryOpen();
-  };
-
-  useEffect(() => {
-    fetchLinkToken();
-  }, []);
-
-  // Edit budget name
   const handleEditBudget = (budget: Budget) => {
     setEditBudgetId(budget.id!);
     setEditBudgetName(budget.name);
@@ -465,7 +524,6 @@ const BudgetBoard = () => {
     }
     setShowDeleteConfirm(null);
   };
-
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="xl" sx={{ mt: 8, mb: 8, position: "relative", px: { xs: 2, sm: 4, md: 6 } }}>
@@ -490,7 +548,7 @@ const BudgetBoard = () => {
             )}
           </Box>
 
-          {!showSetup && (
+          {!showSetup && !currentBudget && (
             <Button
               variant="contained"
               color="primary"
@@ -555,8 +613,8 @@ const BudgetBoard = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={openPlaid}
-              disabled={!ready}
+              // onClick={openPlaid}
+              // disabled={!ready}
               sx={{
                 px: 3,
                 py: 1.25,
@@ -970,7 +1028,6 @@ const BudgetBoard = () => {
               {notification?.message}
             </Alert>
           </Snackbar>
-
           {/* Budget List */}
           <List>
             {budgets.map((budget, index) => (
@@ -1035,5 +1092,4 @@ const BudgetBoard = () => {
     </ThemeProvider>
   );
 };
-
-export default BudgetBoard;
+export default BudgetBoard;  
