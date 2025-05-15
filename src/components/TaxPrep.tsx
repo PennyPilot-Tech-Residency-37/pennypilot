@@ -147,6 +147,23 @@ export default function TaxPrep() {
   // Predefined categories
   const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Home Office Expenses", "Student Loan Interest", "Mortgage Interest", "Retirement Contributions", "Other"];
 
+  // 1. Load deductible expenses from localStorage on mount
+  useEffect(() => {
+    const storedExpenses = localStorage.getItem("deductibleExpenses");
+    if (storedExpenses) {
+      try {
+        setDeductibleExpenses(JSON.parse(storedExpenses));
+      } catch (e) {
+        console.error("Failed to parse stored deductible expenses from localStorage:", e);
+      }
+    }
+  }, []);
+
+  // 2. Save deductible expenses to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem("deductibleExpenses", JSON.stringify(deductibleExpenses));
+  }, [deductibleExpenses]);
+
   useEffect(() => {
     if (!currentUser) {
       navigate("/");

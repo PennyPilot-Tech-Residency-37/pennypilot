@@ -510,6 +510,23 @@ export default function Dashboard() {
     { name: "Target", value: selectedGoal.amount }
   ] : [];
   
+  // Load Plaid accounts from localStorage on mount
+  useEffect(() => {
+    const storedAccounts = localStorage.getItem("plaidAccounts");
+    if (storedAccounts) {
+      try {
+        setPlaidAccounts(JSON.parse(storedAccounts));
+      } catch (e) {
+        console.error("Failed to parse stored Plaid accounts from localStorage:", e);
+      }
+    }
+  }, []);
+
+  // Save Plaid accounts to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem("plaidAccounts", JSON.stringify(plaidAccounts));
+  }, [plaidAccounts]);
+
   return (
     <Box
       sx={{
@@ -735,6 +752,7 @@ export default function Dashboard() {
                 <Typography variant="h6" gutterBottom>
                   Financial Goals
                 </Typography>
+                <br />
                 <Box sx={{ 
                   display: 'flex', 
                   flexDirection: { xs: 'column', md: 'row' },
@@ -752,7 +770,7 @@ export default function Dashboard() {
                     {/* Goals list */}
                     <Box sx={{ 
                       width: '100%',
-                      maxHeight: 200,
+                      maxHeight: 150,
                       overflowY: 'auto',
                       minHeight: 100,
                       '&::-webkit-scrollbar': {
