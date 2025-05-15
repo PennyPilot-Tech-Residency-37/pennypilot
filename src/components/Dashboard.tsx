@@ -10,7 +10,6 @@ import { alpha, Theme } from '@mui/material/styles';
 import { useNavigate } from "react-router-dom";
 import { BudgetData } from "../types/types";
 import { motion, useAnimation } from "framer-motion";
-import { usePlaid } from "../context/PlaidContext";
 import axios from "axios";
 import 'jspdf-autotable';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
@@ -182,7 +181,6 @@ export default function Dashboard() {
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const { fetchLinkToken, openPlaid, ready } = usePlaid();
   const [plaidAccounts, setPlaidAccounts] = useState<any[]>([]);
   const [plaidTransactions, setPlaidTransactions] = useState<any[]>([]);
   const [plaidLoading, setPlaidLoading] = useState(true);
@@ -366,16 +364,6 @@ export default function Dashboard() {
     console.log("Selected budget:", budget); // Debug log
     setSelectedBudget(budget);
   };
-
-  const handleConnectBank = async () => {
-    await fetchLinkToken();
-    openPlaid();
-  };
-
-  // Add useEffect to fetch link token on mount
-  useEffect(() => {
-    fetchLinkToken();
-  }, []);
 
   console.log("budgets", budgets);
   console.log("selectedBudget", selectedBudget);
@@ -935,36 +923,7 @@ export default function Dashboard() {
               Bank Accounts {usingCache && "(Cached)"}
             </Typography>
           </Box>
-          {/* Connect Bank Button (smaller version) */}
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={openPlaid}
-            disabled={!ready}
-            size="small"
-            sx={{
-              px: 2,
-              py: 0.75,
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              borderRadius: 2,
-              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
-              background: '#fbc02d',
-              color: '#fff',
-              mb: 2,
-              '&:hover': {
-                background: '#e6ac00',
-                color: '#fff',
-                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.18)',
-              },
-              '&:active': {
-                boxShadow: '0 1px 4px rgba(25, 118, 210, 0.10)',
-                background: '#c49000',
-              },
-            }}
-          >
-            Connect Your Bank Account
-          </Button>
+          
           <br />
           {plaidLoading && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 1 }}>
