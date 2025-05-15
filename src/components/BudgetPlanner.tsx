@@ -1,21 +1,58 @@
 import { useState, useEffect } from "react";
-import { Container, Typography, Box, Button, Grid, ThemeProvider, createTheme, List, ListItem, ListItemText } from "@mui/material";
+import { Container, Typography, Box, Button, Grid, ThemeProvider, createTheme, List, ListItem, ListItemText, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, TextField, MenuItem, Select, FormControl, InputLabel, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, IconButton } from "@mui/material";
 import BudgetSetup from "./BudgetGuide";
 import BudgetGroup from "./BudgetGroup";
 import BudgetSummaryChart from "./BudgetSummaryChart";
 import { BudgetData } from "../types/types";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { db } from "../types/firebaseConfig";
 import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
 import { useAuth } from "../context/auth";
-import { usePlaidLink } from 'react-plaid-link';
+import { usePlaid } from "../context/PlaidContext";
 import axios from 'axios';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import { Add as AddIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
 
 interface Budget {
   id?: string;
   name: string;
   data: BudgetData;
   createdAt?: string;
+}
+
+interface Transaction {
+  id: string;
+  date: string;
+  amount: number;
+  description: string;
+  category: string;
+  account_id: string;
+  isRecurring?: boolean;
+  recurringPattern?: string;
+}
+
+interface SpendingAnalytics {
+  totalIncome: number;
+  totalExpenses: number;
+  totalSavings: number;
+  categoryBreakdown: { category: string; amount: number }[];
+  monthlyTrend: { month: string; income: number; expenses: number }[];
+}
+
+interface CustomCategory {
+  id: string;
+  name: string;
+  type: 'income' | 'expense' | 'savings';
+  keywords: string[];
+}
+
+interface BudgetAlert {
+  id: string;
+  type: 'spending' | 'income' | 'savings';
+  threshold: number;
+  message: string;
+  triggered: boolean;
 }
 
 // Custom MUI theme for consistency
@@ -37,8 +74,26 @@ const BudgetBoard = () => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
   const [showSetup, setShowSetup] = useState(false);
-  const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [linkReady, setLinkReady] = useState(false);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
+  const [analytics, setAnalytics] = useState<SpendingAnalytics | null>(null);
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [newCategory, setNewCategory] = useState<Partial<CustomCategory>>({});
+  const [alerts, setAlerts] = useState<BudgetAlert[]>([]);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [newAlert, setNewAlert] = useState<Partial<BudgetAlert>>({});
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { fetchLinkToken, openPlaid, ready } = usePlaid();
   
   // Fetch budgets from Firestore on mount
   useEffect(() => {
@@ -66,37 +121,30 @@ const BudgetBoard = () => {
     return () => unsubscribe();
   }, [currentUser]);
 
-  const { open, ready } = usePlaidLink({
-    token: linkToken || '',
-    onSuccess: async (public_token, metadata) => {
-      try {
-        const res = await axios.post("/api/create_link_token", {
-          public_token,
-          key: 'dev-test-key',
-        });
-        console.log('✅ Access token exchange successful:', res.data);
-      } catch (err) {
-        console.error('❌ Error exchanging token:', err);
-      }
-    },
-    onLoad: () => {
-      setLinkReady(true);
-    },
-  });
-
-  const handleConnectBank = async () => {
+  const fetchAccounts = async () => {
+    if (!currentUser) return;
+    setLoadingAccounts(true);
     try {
-      const res = await axios.post("/api/create_link_token", {
-        key: "dev-test-key",
+      const res = await axios.get(`/api/linked_accounts/${currentUser.uid}`, {
+        headers: {
+          'key': 'dev-test-key'
+        }
       });
-      const token = res.data.link_token;
-      setLinkToken(token);
-      console.log("✅ Link token received:", token);
+      setAccounts(res.data);
     } catch (err) {
-      console.error("❌ Failed to fetch link token:", err);
+      console.error('❌ Error fetching accounts:', err);
+    } finally {
+      setLoadingAccounts(false);
     }
   };
-  
+
+  // Fetch accounts on component mount
+  useEffect(() => {
+    if (currentUser) {
+      fetchAccounts();
+    }
+  }, [currentUser]);
+
   const handleFinishSetup = async (data: BudgetData, name: string) => {
     if (!currentUser) return;
     const newBudget = {
@@ -180,6 +228,196 @@ const BudgetBoard = () => {
     </ResponsiveContainer>
   );
 
+  // Add automatic categorization function
+  const autoCategorizeTransaction = (description: string): string => {
+    const lowerDesc = description.toLowerCase();
+    
+    // Income patterns
+    if (lowerDesc.includes('deposit') || lowerDesc.includes('salary') || lowerDesc.includes('payment received')) {
+      return 'Income';
+    }
+    
+    // Expense patterns
+    if (lowerDesc.includes('grocery') || lowerDesc.includes('food') || lowerDesc.includes('restaurant')) {
+      return 'Expense';
+    }
+    
+    // Savings patterns
+    if (lowerDesc.includes('transfer') || lowerDesc.includes('savings')) {
+      return 'Savings';
+    }
+    
+    return 'Uncategorized';
+  };
+
+  // Update fetchTransactions to include analytics
+  const fetchTransactions = async (accountId?: string) => {
+    if (!currentUser) return;
+    setLoadingTransactions(true);
+    try {
+      const res = await axios.get(`/api/transactions`, {
+        params: {
+          account_id: accountId,
+          user_id: currentUser.uid,
+          start_date: dateRange.start,
+          end_date: dateRange.end
+        },
+        headers: {
+          'key': 'dev-test-key'
+        }
+      });
+      
+      // Auto-categorize uncategorized transactions
+      const categorizedTransactions = res.data.transactions.map((t: Transaction) => ({
+        ...t,
+        category: t.category || autoCategorizeTransaction(t.description)
+      }));
+      
+      setTransactions(categorizedTransactions);
+      setAnalytics(res.data.analytics);
+    } catch (err) {
+      console.error('❌ Error fetching transactions:', err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  // Filter transactions based on search and category
+  const filteredTransactions = transactions.filter(transaction => {
+    const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || transaction.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Update useEffect to fetch transactions when accounts change
+  useEffect(() => {
+    if (currentUser && accounts.length > 0) {
+      fetchTransactions(selectedAccount || undefined);
+    }
+  }, [currentUser, accounts, selectedAccount]);
+
+  // Add function to categorize transaction
+  const categorizeTransaction = async (transactionId: string, category: string) => {
+    try {
+      await axios.put(`/api/transactions/${transactionId}`, {
+        category,
+        key: 'dev-test-key'
+      });
+      // Refresh transactions after categorization
+      fetchTransactions(selectedAccount || undefined);
+    } catch (err) {
+      console.error('❌ Error categorizing transaction:', err);
+    }
+  };
+
+  // Add custom category
+  const handleAddCategory = async () => {
+    try {
+      const res = await axios.post('/api/categories', {
+        ...newCategory,
+        key: 'dev-test-key'
+      });
+      setCustomCategories([...customCategories, res.data]);
+      setShowCategoryDialog(false);
+      setNewCategory({});
+      setNotification({ message: 'Category added successfully', type: 'success' });
+    } catch (err) {
+      setNotification({ message: 'Failed to add category', type: 'error' });
+    }
+  };
+
+  // Add budget alert
+  const handleAddAlert = async () => {
+    try {
+      const res = await axios.post('/api/alerts', {
+        ...newAlert,
+        key: 'dev-test-key'
+      });
+      setAlerts([...alerts, res.data]);
+      setShowAlertDialog(false);
+      setNewAlert({});
+      setNotification({ message: 'Alert added successfully', type: 'success' });
+    } catch (err) {
+      setNotification({ message: 'Failed to add alert', type: 'error' });
+    }
+  };
+
+  // Export transactions to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Transaction Report', 14, 15);
+    
+    const tableData = filteredTransactions.map(t => [
+      new Date(t.date).toLocaleDateString(),
+      t.description,
+      `$${Math.abs(t.amount).toFixed(2)}`,
+      t.category,
+      t.isRecurring ? 'Yes' : 'No'
+    ]);
+
+    (doc as any).autoTable({
+      head: [['Date', 'Description', 'Amount', 'Category', 'Recurring']],
+      body: tableData,
+      startY: 25
+    });
+
+    doc.save('transactions.pdf');
+  };
+
+  // Export transactions to CSV
+  const exportToCSV = () => {
+    const headers = ['Date', 'Description', 'Amount', 'Category', 'Recurring'];
+    const csvData = filteredTransactions.map(t => [
+      new Date(t.date).toLocaleDateString(),
+      t.description,
+      Math.abs(t.amount).toFixed(2),
+      t.category,
+      t.isRecurring ? 'Yes' : 'No'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'transactions.csv';
+    link.click();
+  };
+
+  // Detect recurring transactions
+  const detectRecurringTransactions = async () => {
+    try {
+      const res = await axios.post('/api/detect-recurring', {
+        user_id: currentUser?.uid,
+        key: 'dev-test-key'
+      });
+      setTransactions(res.data.transactions);
+      setNotification({ message: 'Recurring transactions detected', type: 'success' });
+    } catch (err) {
+      setNotification({ message: 'Failed to detect recurring transactions', type: 'error' });
+    }
+  };
+
+  const handleConnectBank = async () => {
+    await fetchLinkToken();
+    // Always try to open Plaid, even if ready is not true yet
+    const tryOpen = () => {
+      if (ready) {
+        openPlaid();
+      } else {
+        setTimeout(tryOpen, 100);
+      }
+    };
+    tryOpen();
+  };
+
+  useEffect(() => {
+    fetchLinkToken();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="xl" sx={{ mt: 8, mb: 8, position: "relative", px: { xs: 2, sm: 4, md: 6 } }}>
@@ -262,6 +500,8 @@ const BudgetBoard = () => {
             <Button
               variant="contained"
               color="primary"
+              onClick={openPlaid}
+              disabled={!ready}
               sx={{
                 px: 3,
                 py: 1.25,
@@ -281,18 +521,263 @@ const BudgetBoard = () => {
                   background: "#c49000",
                 },
               }}
-              onClick={async () => {
-                if (!linkToken) {
-                  await handleConnectBank();
-                }
-                if (ready && linkToken) {
-                  open();
-                }
-              }}
             >
               Connect Your Bank Account
             </Button>
           </Box>
+
+          {/* Connected Accounts Section */}
+          <Box sx={{ mt: 4, mb: 4, width: '100%' }}>
+            <Typography variant="h6" gutterBottom>
+              Connected Bank Accounts
+            </Typography>
+            {loadingAccounts ? (
+              <Typography>Loading accounts...</Typography>
+            ) : accounts.length > 0 ? (
+              <List>
+                {accounts.map((account) => (
+                  <ListItem 
+                    key={account.id} 
+                    sx={{ 
+                      bgcolor: 'background.paper',
+                      mb: 1,
+                      borderRadius: 1,
+                      boxShadow: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: 'action.hover'
+                      }
+                    }}
+                    onClick={() => setSelectedAccount(account.id)}
+                  >
+                    <ListItemText
+                      primary={account.name}
+                      secondary={`Balance: $${parseFloat(account.balance).toFixed(2)}`}
+                    />
+                    {selectedAccount === account.id && (
+                      <Chip label="Selected" color="primary" size="small" />
+                    )}
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography color="text.secondary" gutterBottom>
+                No bank accounts connected
+              </Typography>
+            )}
+          </Box>
+
+          {/* Transactions Section */}
+          {selectedAccount && (
+            <Box sx={{ mt: 4, mb: 4, width: '100%' }}>
+              <Typography variant="h6" gutterBottom>
+                Recent Transactions
+              </Typography>
+
+              {/* Search and Filter Controls */}
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Search Transactions"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    size="small"
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      value={categoryFilter}
+                      label="Category"
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                    >
+                      <MenuItem value="all">All Categories</MenuItem>
+                      <MenuItem value="Income">Income</MenuItem>
+                      <MenuItem value="Expense">Expense</MenuItem>
+                      <MenuItem value="Savings">Savings</MenuItem>
+                      <MenuItem value="Uncategorized">Uncategorized</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="Start Date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                    size="small"
+                    sx={{ mr: 1 }}
+                  />
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="End Date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                    size="small"
+                    sx={{ mt: 1 }}
+                  />
+                </Grid>
+              </Grid>
+
+              {/* Analytics Cards */}
+              {analytics && (
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography color="textSecondary" gutterBottom>
+                          Total Income
+                        </Typography>
+                        <Typography variant="h5" color="success.main">
+                          ${analytics.totalIncome.toFixed(2)}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography color="textSecondary" gutterBottom>
+                          Total Expenses
+                        </Typography>
+                        <Typography variant="h5" color="error.main">
+                          ${analytics.totalExpenses.toFixed(2)}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography color="textSecondary" gutterBottom>
+                          Total Savings
+                        </Typography>
+                        <Typography variant="h5" color="primary.main">
+                          ${analytics.totalSavings.toFixed(2)}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Spending Trends Chart */}
+              {analytics && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Monthly Spending Trends
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={analytics.monthlyTrend}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="income" name="Income" fill="#4caf50" />
+                      <Bar dataKey="expenses" name="Expenses" fill="#f44336" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+
+              {/* Export and Actions Buttons */}
+              <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+                <Button variant="outlined" onClick={exportToPDF}>
+                  Export to PDF
+                </Button>
+                <Button variant="outlined" onClick={exportToCSV}>
+                  Export to CSV
+                </Button>
+                <Button variant="outlined" onClick={detectRecurringTransactions}>
+                  Detect Recurring Transactions
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => setShowCategoryDialog(true)}
+                >
+                  Add Custom Category
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<NotificationsIcon />}
+                  onClick={() => setShowAlertDialog(true)}
+                >
+                  Set Budget Alert
+                </Button>
+              </Box>
+
+              {/* Transactions Table */}
+              {loadingTransactions ? (
+                <Typography>Loading transactions...</Typography>
+              ) : filteredTransactions.length > 0 ? (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell align="right">Amount</TableCell>
+                        <TableCell>Category</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredTransactions.map((transaction) => (
+                        <TableRow key={transaction.id}>
+                          <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{transaction.description}</TableCell>
+                          <TableCell align="right" sx={{
+                            color: transaction.amount < 0 ? 'error.main' : 'success.main'
+                          }}>
+                            ${Math.abs(transaction.amount).toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={transaction.category || 'Uncategorized'} 
+                              color={transaction.category ? 'primary' : 'default'}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="small"
+                              onClick={() => categorizeTransaction(transaction.id, 'Income')}
+                              sx={{ mr: 1 }}
+                            >
+                              Income
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => categorizeTransaction(transaction.id, 'Expense')}
+                              sx={{ mr: 1 }}
+                            >
+                              Expense
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => categorizeTransaction(transaction.id, 'Savings')}
+                            >
+                              Savings
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Typography color="text.secondary">
+                  No transactions found
+                </Typography>
+              )}
+            </Box>
+          )}
 
           {currentBudget && (
             <Box
@@ -340,6 +825,96 @@ const BudgetBoard = () => {
               </Grid>
             </Box>
           )}
+
+          {/* Custom Category Dialog */}
+          <Dialog open={showCategoryDialog} onClose={() => setShowCategoryDialog(false)}>
+            <DialogTitle>Add Custom Category</DialogTitle>
+            <DialogContent>
+              <TextField
+                fullWidth
+                label="Category Name"
+                value={newCategory.name || ''}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                sx={{ mt: 2 }}
+              />
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel>Type</InputLabel>
+                <Select
+                  value={newCategory.type || ''}
+                  label="Type"
+                  onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value as any })}
+                >
+                  <MenuItem value="income">Income</MenuItem>
+                  <MenuItem value="expense">Expense</MenuItem>
+                  <MenuItem value="savings">Savings</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Keywords (comma-separated)"
+                value={newCategory.keywords?.join(',') || ''}
+                onChange={(e) => setNewCategory({ ...newCategory, keywords: e.target.value.split(',') })}
+                sx={{ mt: 2 }}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowCategoryDialog(false)}>Cancel</Button>
+              <Button onClick={handleAddCategory} variant="contained">Add</Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Budget Alert Dialog */}
+          <Dialog open={showAlertDialog} onClose={() => setShowAlertDialog(false)}>
+            <DialogTitle>Set Budget Alert</DialogTitle>
+            <DialogContent>
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel>Alert Type</InputLabel>
+                <Select
+                  value={newAlert.type || ''}
+                  label="Alert Type"
+                  onChange={(e) => setNewAlert({ ...newAlert, type: e.target.value as any })}
+                >
+                  <MenuItem value="spending">Spending</MenuItem>
+                  <MenuItem value="income">Income</MenuItem>
+                  <MenuItem value="savings">Savings</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                type="number"
+                label="Threshold Amount"
+                value={newAlert.threshold || ''}
+                onChange={(e) => setNewAlert({ ...newAlert, threshold: parseFloat(e.target.value) })}
+                sx={{ mt: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Alert Message"
+                value={newAlert.message || ''}
+                onChange={(e) => setNewAlert({ ...newAlert, message: e.target.value })}
+                sx={{ mt: 2 }}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowAlertDialog(false)}>Cancel</Button>
+              <Button onClick={handleAddAlert} variant="contained">Add</Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Notification Snackbar */}
+          <Snackbar
+            open={!!notification}
+            autoHideDuration={6000}
+            onClose={() => setNotification(null)}
+          >
+            <Alert
+              onClose={() => setNotification(null)}
+              severity={notification?.type}
+              sx={{ width: '100%' }}
+            >
+              {notification?.message}
+            </Alert>
+          </Snackbar>
         </Box>
       </Container>
     </ThemeProvider>

@@ -10,6 +10,7 @@ import { alpha, Theme } from '@mui/material/styles';
 import { useNavigate } from "react-router-dom";
 import { BudgetData } from "../types/types";
 import { motion, useAnimation } from "framer-motion";
+import { usePlaid } from "../context/PlaidContext";
 
 interface UserData {
   budgetSet: boolean;
@@ -85,6 +86,7 @@ export default function Dashboard() {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const { fetchLinkToken, openPlaid, ready } = usePlaid();
 
   const startPlaneAnimation = async () => {
     await planeControls.start({
@@ -242,6 +244,18 @@ export default function Dashboard() {
   const handleBudgetSelect = (budget: Budget) => {
     console.log("Selected budget:", budget); // Debug log
     setSelectedBudget(budget);
+  };
+
+  const handleConnectBank = async () => {
+    await fetchLinkToken();
+    const waitForReady = async () => {
+      if (ready) {
+        openPlaid();
+      } else {
+        setTimeout(waitForReady, 100);
+      }
+    };
+    waitForReady();
   };
 
   console.log("budgets", budgets);
