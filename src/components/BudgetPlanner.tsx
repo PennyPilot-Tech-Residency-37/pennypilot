@@ -95,6 +95,44 @@ const BudgetBoard = () => {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const { fetchLinkToken, openPlaid, ready } = usePlaid();
   
+  // 1. Load budgets from localStorage on mount (before Firestore)
+  useEffect(() => {
+    const storedBudgets = localStorage.getItem("budgets");
+    if (storedBudgets) {
+      try {
+        const parsed = JSON.parse(storedBudgets);
+        setBudgets(parsed);
+        if (parsed.length > 0) {
+          setCurrentBudget(parsed[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse stored budgets from localStorage:", e);
+      }
+    }
+  }, []);
+
+  // 2. Save budgets to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem("budgets", JSON.stringify(budgets));
+  }, [budgets]);
+
+  // 3. Load bank accounts from localStorage on mount
+  useEffect(() => {
+    const storedAccounts = localStorage.getItem("bankAccounts");
+    if (storedAccounts) {
+      try {
+        setAccounts(JSON.parse(storedAccounts));
+      } catch (e) {
+        console.error("Failed to parse stored bank accounts from localStorage:", e);
+      }
+    }
+  }, []);
+
+  // 4. Save bank accounts to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem("bankAccounts", JSON.stringify(accounts));
+  }, [accounts]);
+
   // Fetch budgets from Firestore on mount
   useEffect(() => {
     if (!currentUser) return;
