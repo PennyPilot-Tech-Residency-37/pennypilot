@@ -12,6 +12,7 @@ import { BudgetData } from "../types/types";
 import { motion, useAnimation } from "framer-motion";
 import { usePlaid } from "../context/PlaidContext";
 import axios from "axios";
+import 'jspdf-autotable';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import {
@@ -160,11 +161,26 @@ export default function Dashboard() {
   const { currentUser } = useAuth();
   const planeControls = useAnimation();
   const [userData, setUserData] = useState<UserData>({ budgetSet: false });
-  const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>([]);
+  const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>(() => {
+    try {
+      const stored = localStorage.getItem("deductibleExpenses");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [totalDeductibleSpent, setTotalDeductibleSpent] = useState<number>(0);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [budgets, setBudgets] = useState<Budget[]>(() => {
+    const stored = localStorage.getItem("budgets");
+    if (!stored) return [];
+    try { return JSON.parse(stored); } catch (e) { return []; }
+  });
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(() => {
+    const stored = localStorage.getItem("currentBudget");
+    if (!stored) return null;
+    try { return JSON.parse(stored); } catch (e) { return null; }
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const { fetchLinkToken, openPlaid, ready } = usePlaid();
   const [plaidAccounts, setPlaidAccounts] = useState<any[]>([]);
@@ -236,97 +252,34 @@ export default function Dashboard() {
     };
   }, [planeControls]);
 
+  // Sync with localStorage for budgets, deductible expenses, and currentBudget
   useEffect(() => {
-    if (!currentUser) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Fetch user data
-    const fetchUserData = async () => {
-      try {
-        const userQuery = query(collection(db, "users"), where("uid", "==", currentUser.uid));
-        const userSnapshot = await getDocs(userQuery);
-        const userData = userSnapshot.docs[0]?.data() as UserData;
-        if (userData) setUserData(userData);
-      } catch (err) {
-        console.error("Error fetching user data:", err);
-        setError("Failed to fetch user data.");
+    const syncFromStorage = () => {
+      // Budgets
+      const storedBudgets = localStorage.getItem("budgets");
+      if (storedBudgets) {
+        try { setBudgets(JSON.parse(storedBudgets)); } catch {}
+      }
+      // Deductible Expenses
+      const storedExpenses = localStorage.getItem("deductibleExpenses");
+      if (storedExpenses) {
+        try { setDeductibleExpenses(JSON.parse(storedExpenses)); } catch {}
+      }
+      // Current Budget
+      const storedCurrent = localStorage.getItem("currentBudget");
+      if (storedCurrent) {
+        try { setSelectedBudget(JSON.parse(storedCurrent)); } catch {}
       }
     };
-    fetchUserData();
+    window.addEventListener('storage', syncFromStorage);
+    syncFromStorage();
+    return () => window.removeEventListener('storage', syncFromStorage);
+  }, []);
 
-    // Fetch budgets in real-time
-    const budgetRef = collection(db, "users", currentUser.uid, "budget");
-    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
-    const unsubscribeBudgets = onSnapshot(budgetQuery, (snapshot) => {
-      const fetchedBudgets = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name || `Budget ${doc.id}`,
-          data: {
-            income: data.income || [],
-            expenses: data.expenses || [],
-            savings: data.savings || [],
-          } as BudgetDataStructure,
-          createdAt: data.createdAt,
-        };
-      }) as Budget[];
-
-      console.log("Fetched budgets:", fetchedBudgets); // Debug log
-      setBudgets(fetchedBudgets);
-
-      if (fetchedBudgets.length > 0) {
-        // If there's no selected budget or the previously selected budget is no longer in the list, select the first one
-        const currentSelectedId = selectedBudget?.id;
-        const stillExists = fetchedBudgets.some(b => b.id === currentSelectedId);
-        if (!stillExists) {
-          setSelectedBudget(fetchedBudgets[0]);
-        }
-      } else {
-        setSelectedBudget(null);
-      }
-      setIsLoading(false);
-    }, (err) => {
-      console.error("Error fetching budgets:", err);
-      setError("Failed to fetch budgets. Please try again.");
-      setIsLoading(false);
-    });
-
-    // Fetch deductible expenses in real-time
-    const userDeductibleRef = collection(db, "users", currentUser.uid, "deductibleExpenses");
-    const deductibleQuery = query(userDeductibleRef, orderBy("createdAt", "desc"));
-    const unsubscribeDeductibles = onSnapshot(deductibleQuery, (snapshot) => {
-      const expenses = snapshot.docs.map((doc) => doc.data()) as DeductibleExpense[];
-      setDeductibleExpenses(expenses);
-      const total = expenses.reduce((sum, expense) => sum + Number(expense.deductibleAmount), 0);
-      setTotalDeductibleSpent(total);
-    }, (err) => {
-      console.error("Error fetching deductible expenses:", err);
-      setError("Failed to fetch deductible expenses.");
-    });
-
-    // Cleanup listeners on unmount
-    return () => {
-      unsubscribeBudgets();
-      unsubscribeDeductibles();
-    };
-  }, [currentUser, selectedBudget?.id]); // Re-run if currentUser or selectedBudget.id changes
-
-  // Helper: Fetch cached data from Firestore
-  const fetchCachedData = async () => {
-    if (!currentUser) return;
-    try {
-      const accountsSnap = await getDoc(doc(db, "users", currentUser.uid, "plaidCache", "accounts"));
-      const transactionsSnap = await getDoc(doc(db, "users", currentUser.uid, "plaidCache", "transactions"));
-      setPlaidAccounts(accountsSnap.exists() ? accountsSnap.data().accounts : []);
-      setPlaidTransactions(transactionsSnap.exists() ? transactionsSnap.data().transactions : []);
-      setUsingCache(true);
-    } catch (err) {
-      setPlaidError("Failed to load cached bank data.");
-    }
-  };
+  // Update total deductible spent when expenses change
+  useEffect(() => {
+    setTotalDeductibleSpent(deductibleExpenses.reduce((sum, expense) => sum + Number(expense.deductibleAmount), 0));
+  }, [deductibleExpenses]);
 
   // Main effect: fetch Plaid data, cache it, or use fallback
   useEffect(() => {
@@ -341,7 +294,10 @@ export default function Dashboard() {
         const accountsRes = await axios.get(`/api/linked_accounts/${currentUser.uid}`, {
           headers: { key: "dev-test-key" }
         });
-        setPlaidAccounts(accountsRes.data);
+        if (accountsRes.data && accountsRes.data.length > 0) {
+          setPlaidAccounts(accountsRes.data);
+          localStorage.setItem("plaidAccounts", JSON.stringify(accountsRes.data));
+        }
 
         // 2. Fetch transactions
         const transactionsRes = await axios.get(`/api/transactions`, {
@@ -350,21 +306,9 @@ export default function Dashboard() {
         });
         setPlaidTransactions(transactionsRes.data);
 
-        // 3. Cache in Firestore
-        await setDoc(doc(db, "users", currentUser.uid, "plaidCache", "accounts"), {
-          accounts: accountsRes.data,
-          updatedAt: new Date().toISOString()
-        });
-        await setDoc(doc(db, "users", currentUser.uid, "plaidCache", "transactions"), {
-          transactions: transactionsRes.data,
-          updatedAt: new Date().toISOString()
-        });
-
         setPlaidLoading(false);
       } catch (err) {
         setPlaidError("Could not fetch live bank data. Showing cached data if available.");
-        // Try to load from cache
-        await fetchCachedData();
         setPlaidLoading(false);
       }
     };
@@ -425,15 +369,13 @@ export default function Dashboard() {
 
   const handleConnectBank = async () => {
     await fetchLinkToken();
-    const waitForReady = async () => {
-      if (ready) {
-        openPlaid();
-      } else {
-        setTimeout(waitForReady, 100);
-      }
-    };
-    waitForReady();
+    openPlaid();
   };
+
+  // Add useEffect to fetch link token on mount
+  useEffect(() => {
+    fetchLinkToken();
+  }, []);
 
   console.log("budgets", budgets);
   console.log("selectedBudget", selectedBudget);
@@ -605,7 +547,9 @@ export default function Dashboard() {
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" gutterBottom>Budget Overview</Typography>
                     {isLoading ? (
-                      <LoadingSpinner />
+                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+                        <LoadingSpinner />
+                      </Box>
                     ) : budgets.length > 0 ? (
                       <>
                         <Typography variant="body1" sx={{ fontSize: '1.2rem', fontWeight: 500, mb: 2 }}>
@@ -991,6 +935,37 @@ export default function Dashboard() {
               Bank Accounts {usingCache && "(Cached)"}
             </Typography>
           </Box>
+          {/* Connect Bank Button (smaller version) */}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={openPlaid}
+            disabled={!ready}
+            size="small"
+            sx={{
+              px: 2,
+              py: 0.75,
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              borderRadius: 2,
+              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.12)',
+              background: '#fbc02d',
+              color: '#fff',
+              mb: 2,
+              '&:hover': {
+                background: '#e6ac00',
+                color: '#fff',
+                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.18)',
+              },
+              '&:active': {
+                boxShadow: '0 1px 4px rgba(25, 118, 210, 0.10)',
+                background: '#c49000',
+              },
+            }}
+          >
+            Connect Your Bank Account
+          </Button>
+          <br />
           {plaidLoading && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 1 }}>
               <LoadingSpinner />

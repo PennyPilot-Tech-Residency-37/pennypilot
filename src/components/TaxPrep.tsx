@@ -133,7 +133,11 @@ export default function TaxPrep() {
   const [formData, setFormData] = useState(initialFormState);
   
   // App state
-  const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>([]);
+  const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>(() => {
+    const stored = localStorage.getItem("deductibleExpenses");
+    if (!stored) return [];
+    try { return JSON.parse(stored); } catch (e) { return []; }
+  });
   const [totalDeductibleSpent, setTotalDeductibleSpent] = useState<number>(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
@@ -147,60 +151,21 @@ export default function TaxPrep() {
   // Predefined categories
   const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Home Office Expenses", "Student Loan Interest", "Mortgage Interest", "Retirement Contributions", "Other"];
 
-  // 1. Load deductible expenses from localStorage on mount
+  // Listen for changes to localStorage from other tabs
   useEffect(() => {
-    const storedExpenses = localStorage.getItem("deductibleExpenses");
-    if (storedExpenses) {
-      try {
-        setDeductibleExpenses(JSON.parse(storedExpenses));
-      } catch (e) {
-        console.error("Failed to parse stored deductible expenses from localStorage:", e);
-      }
-    }
-  }, []);
-
-  // 2. Save deductible expenses to localStorage on every change
-  useEffect(() => {
-    localStorage.setItem("deductibleExpenses", JSON.stringify(deductibleExpenses));
-  }, [deductibleExpenses]);
-
-  useEffect(() => {
-    if (!currentUser) {
-      navigate("/");
-      return;
-    }
-
-    // Set up real-time listener
-    const userDeductibleRef = collection(db, "users", currentUser.uid, "deductibleExpenses");
-    const q = query(
-      userDeductibleRef,
-      orderBy("createdAt", "desc")
-    );
-
-    const unsubscribeListener = onSnapshot(q, (snapshot) => {
-      const expenses = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as DeductibleExpense[];
-      
-      setDeductibleExpenses(expenses);
-      calculateTotal(expenses);
-      setIsLoading(false);
-    }, (error) => {
-      console.error('Error fetching expenses:', error);
-      setError("Failed to fetch expenses. Please try again.");
-      setIsLoading(false);
-    });
-
-    setUnsubscribe(() => unsubscribeListener);
-
-    // Cleanup listener on unmount
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
+    const handleStorageChange = () => {
+      const updated = localStorage.getItem("deductibleExpenses");
+      if (updated) {
+        try {
+          const parsed = JSON.parse(updated);
+          setDeductibleExpenses(parsed);
+          console.log("[TaxPrep] deductibleExpenses updated from localStorage event:", parsed);
+        } catch {}
       }
     };
-  }, [currentUser, navigate]);
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const calculateTotal = (expenses: DeductibleExpense[]) => {
     const total = expenses.reduce((sum, expense) => sum + Number(expense.deductibleAmount), 0);
@@ -222,7 +187,6 @@ export default function TaxPrep() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return;
     setIsLoading(true);
 
     const amount = Number(formData.deductibleAmount);
@@ -241,28 +205,28 @@ export default function TaxPrep() {
     try {
       const finalCategory = formData.category === "Other" ? formData.customCategory : formData.category;
       const expenseData = {
+        id: editingId || Date.now().toString(),
         deductibleAmount: amount,
         category: finalCategory,
         notes: formData.notes,
-        createdAt: new Date().toISOString(),
+        createdAt: editingId
+          ? deductibleExpenses.find(e => e.id === editingId)?.createdAt || new Date().toISOString()
+          : new Date().toISOString(),
       };
-
-      const userDeductibleRef = collection(db, "users", currentUser.uid, "deductibleExpenses");
-
-      // Reset form immediately after validation but before the save operation
-      setFormData(initialFormState);
-      
+      let updatedExpenses;
       if (editingId) {
-        const expenseRef = doc(db, "users", currentUser.uid, "deductibleExpenses", editingId);
-        await updateDoc(expenseRef, expenseData);
+        updatedExpenses = deductibleExpenses.map(e => e.id === editingId ? expenseData : e);
         setEditingId(null);
+        console.log("[TaxPrep] Edited expense:", expenseData);
       } else {
-        await addDoc(userDeductibleRef, expenseData);
+        updatedExpenses = [...deductibleExpenses, expenseData];
+        console.log("[TaxPrep] Added new expense:", expenseData);
       }
-
+      setDeductibleExpenses(updatedExpenses);
+      localStorage.setItem("deductibleExpenses", JSON.stringify(updatedExpenses));
+      setFormData(initialFormState);
       setSuccess(editingId ? "Expense updated successfully!" : "Expense added successfully!");
     } catch (err) {
-      // If there's an error, restore the form data
       setFormData({
         deductibleAmount: amount.toString(),
         category: formData.category,
@@ -285,16 +249,12 @@ export default function TaxPrep() {
     });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!currentUser) return;
-
-    try {
-      const expenseRef = doc(db, "users", currentUser.uid, "deductibleExpenses", id);
-      await deleteDoc(expenseRef);
-      setSuccess("Expense deleted successfully!");
-    } catch (err) {
-      setError("Failed to delete expense. Please try again.");
-    }
+  const handleDelete = (id: string) => {
+    const updatedExpenses = deductibleExpenses.filter(e => e.id !== id);
+    setDeductibleExpenses(updatedExpenses);
+    localStorage.setItem("deductibleExpenses", JSON.stringify(updatedExpenses));
+    console.log("[TaxPrep] Deleted expense with id:", id);
+    setSuccess("Expense deleted successfully!");
   };
 
   const handleExport = () => {
