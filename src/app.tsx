@@ -9,9 +9,13 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import Footer from "./components/Footer";
 import { Box } from "@mui/material";
+import { PlaidProvider, usePlaid } from "./context/PlaidContext";
+import { Button } from "@mui/material";
 
 function AppRoutes() {
   const { currentUser } = useAuth();
+  const { fetchLinkToken, openPlaid, ready } = usePlaid();
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -27,13 +31,15 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-          <Navbar />
+        <PlaidProvider>
+          <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Navbar />
           <Box sx={{ flex: 1 }}>
             <AppRoutes />
           </Box>
-          <Footer />
-        </Box>
+            <Footer />
+          </Box>
+        </PlaidProvider>
       </BrowserRouter>
     </AuthProvider>
   );

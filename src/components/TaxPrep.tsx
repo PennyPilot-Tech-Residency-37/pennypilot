@@ -45,6 +45,7 @@ import {
 } from "firebase/firestore";
 import { alpha } from '@mui/material/styles';
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import { usePlaid } from "../context/PlaidContext";
 
 interface DeductibleExpense {
   id?: string;
@@ -120,6 +121,7 @@ const renderPieLabel = ({
 export default function TaxPrep() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const { fetchLinkToken, openPlaid, ready } = usePlaid();
 
   // Form state
   const initialFormState = {
@@ -144,6 +146,23 @@ export default function TaxPrep() {
 
   // Predefined categories
   const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Home Office Expenses", "Student Loan Interest", "Mortgage Interest", "Retirement Contributions", "Other"];
+
+  // 1. Load deductible expenses from localStorage on mount
+  useEffect(() => {
+    const storedExpenses = localStorage.getItem("deductibleExpenses");
+    if (storedExpenses) {
+      try {
+        setDeductibleExpenses(JSON.parse(storedExpenses));
+      } catch (e) {
+        console.error("Failed to parse stored deductible expenses from localStorage:", e);
+      }
+    }
+  }, []);
+
+  // 2. Save deductible expenses to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem("deductibleExpenses", JSON.stringify(deductibleExpenses));
+  }, [deductibleExpenses]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -367,6 +386,18 @@ export default function TaxPrep() {
     (sum, entry) => sum + entry.value,
     0
   );
+
+  const handleConnectBank = async () => {
+    await fetchLinkToken();
+    const waitForReady = async () => {
+      if (ready) {
+        openPlaid();
+      } else {
+        setTimeout(waitForReady, 100);
+      }
+    };
+    waitForReady();
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
