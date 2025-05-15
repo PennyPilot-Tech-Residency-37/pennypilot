@@ -12,7 +12,7 @@ import { usePlaid } from "../context/PlaidContext";
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { Add as AddIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
+import { Add as AddIcon, Notifications as NotificationsIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 interface Budget {
   id?: string;
@@ -71,10 +71,37 @@ const theme = createTheme({
 
 const BudgetBoard = () => {
   const { currentUser } = useAuth();
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>(() => {
+    const stored = localStorage.getItem("budgets");
+    if (!stored) return [];
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error("Failed to parse stored budgets:", e);
+      return [];
+    }
+  });
+  const [currentBudget, setCurrentBudget] = useState<Budget | null>(() => {
+    const stored = localStorage.getItem("currentBudget");
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error("Failed to parse stored current budget:", e);
+      return null;
+    }
+  });
   const [showSetup, setShowSetup] = useState(false);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>(() => {
+    const stored = localStorage.getItem("bankAccounts");
+    if (!stored) return [];
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error("Failed to parse stored bank accounts:", e);
+      return [];
+    }
+  });
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
@@ -94,71 +121,77 @@ const BudgetBoard = () => {
   const [newAlert, setNewAlert] = useState<Partial<BudgetAlert>>({});
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const { fetchLinkToken, openPlaid, ready } = usePlaid();
+  const [editBudgetId, setEditBudgetId] = useState<string | null>(null);
+  const [editBudgetName, setEditBudgetName] = useState<string>("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   
-  // 1. Load budgets from localStorage on mount (before Firestore)
-  useEffect(() => {
-    const storedBudgets = localStorage.getItem("budgets");
-    if (storedBudgets) {
-      try {
-        const parsed = JSON.parse(storedBudgets);
-        setBudgets(parsed);
-        if (parsed.length > 0) {
-          setCurrentBudget(parsed[0]);
-        }
-      } catch (e) {
-        console.error("Failed to parse stored budgets from localStorage:", e);
-      }
-    }
-  }, []);
-
-  // 2. Save budgets to localStorage on every change
+  // Save budgets to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("budgets", JSON.stringify(budgets));
   }, [budgets]);
 
-  // 3. Load bank accounts from localStorage on mount
+  // Save current budget to localStorage whenever it changes
   useEffect(() => {
-    const storedAccounts = localStorage.getItem("bankAccounts");
-    if (storedAccounts) {
-      try {
-        setAccounts(JSON.parse(storedAccounts));
-      } catch (e) {
-        console.error("Failed to parse stored bank accounts from localStorage:", e);
-      }
+    if (currentBudget) {
+      localStorage.setItem("currentBudget", JSON.stringify(currentBudget));
     }
-  }, []);
+  }, [currentBudget]);
 
-  // 4. Save bank accounts to localStorage on every change
+  // Save accounts to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("bankAccounts", JSON.stringify(accounts));
   }, [accounts]);
 
-  // Fetch budgets from Firestore on mount
-  useEffect(() => {
-    if (!currentUser) return;
-    const budgetRef = collection(db, "users", currentUser.uid, "budget");
-    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
-    const unsubscribe = onSnapshot(budgetQuery, (snapshot) => {
-      const fetchedBudgets = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name || `Budget ${doc.id}`,
-        data: {
-          income: doc.data().income || [],
-          expenses: doc.data().expenses || [],
-          savings: doc.data().savings || [],
-        },
-        createdAt: doc.data().createdAt,
-      })) as Budget[];
-      setBudgets(fetchedBudgets);
-      if (fetchedBudgets.length > 0) {
-        setCurrentBudget(fetchedBudgets[0]);
-      } else {
-        setCurrentBudget(null);
-      }
+  const handleFinishSetup = async (data: BudgetData, name: string) => {
+    const newBudget = {
+      id: Date.now().toString(),
+      name: name || `Budget ${budgets.length + 1}`,
+      data: {
+        income: data.income || [],
+        expenses: data.expenses || [],
+        savings: data.savings || [],
+      },
+      createdAt: new Date().toISOString(),
+    };
+    setBudgets(prev => {
+      const updated = [...prev, newBudget];
+      localStorage.setItem("budgets", JSON.stringify(updated));
+      return updated;
     });
-    return () => unsubscribe();
-  }, [currentUser]);
+    setCurrentBudget(newBudget);
+    localStorage.setItem("currentBudget", JSON.stringify(newBudget));
+    setShowSetup(false);
+  };
 
+  // Update budget
+  const handleBudgetUpdate = (
+    type: "income" | "expenses" | "savings",
+    items: { name: string; amount: string; spent?: string }[]
+  ) => {
+    if (!currentBudget) return;
+    const updatedBudget = {
+      ...currentBudget,
+      data: {
+        ...currentBudget.data,
+        [type]: items,
+      },
+    };
+    setCurrentBudget(updatedBudget);
+    setBudgets(budgets.map((b) => (b.id === currentBudget.id ? updatedBudget : b)));
+  };
+
+  const handleBudgetSelect = (budgetData: BudgetData) => {
+    const selectedBudget = budgets.find((b) => b.data === budgetData);
+    if (selectedBudget) {
+      setCurrentBudget(selectedBudget);
+    }
+  };
+
+  const handleCreateNewBudget = () => {
+    setShowSetup(true);
+  };
+
+  // Fetch accounts from API
   const fetchAccounts = async () => {
     if (!currentUser) return;
     setLoadingAccounts(true);
@@ -168,7 +201,9 @@ const BudgetBoard = () => {
           'key': 'dev-test-key'
         }
       });
-      setAccounts(res.data);
+      if (res.data && res.data.length > 0) {
+        setAccounts(res.data);
+      }
     } catch (err) {
       console.error('❌ Error fetching accounts:', err);
     } finally {
@@ -176,64 +211,12 @@ const BudgetBoard = () => {
     }
   };
 
-  // Fetch accounts on component mount
+  // Fetch accounts on component mount or login
   useEffect(() => {
     if (currentUser) {
       fetchAccounts();
     }
   }, [currentUser]);
-
-  const handleFinishSetup = async (data: BudgetData, name: string) => {
-    if (!currentUser) return;
-    const newBudget = {
-      name: name || `Budget ${budgets.length + 1}`,
-      income: data.income || [],
-      expenses: data.expenses || [],
-      savings: data.savings || [],
-      createdAt: new Date().toISOString(),
-    };
-    const budgetRef = collection(db, "users", currentUser.uid, "budget");
-    await addDoc(budgetRef, newBudget);
-    setShowSetup(false); // Firestore onSnapshot will update state
-  };
-
-  // Update budget in Firestore
-  const handleBudgetUpdate = async (
-    type: "income" | "expenses" | "savings",
-    items: { name: string; amount: string; spent?: string }[]
-  ) => {
-    if (!currentBudget || !currentUser) return;
-    const updatedBudget = {
-      ...currentBudget,
-      data: {
-        ...currentBudget.data,
-        [type]: items,
-      },
-    };
-    if (currentBudget.id) {
-      const budgetRef = doc(db, "users", currentUser.uid, "budget", currentBudget.id);
-      await updateDoc(budgetRef, {
-        name: updatedBudget.name,
-        income: updatedBudget.data.income,
-        expenses: updatedBudget.data.expenses,
-        savings: updatedBudget.data.savings,
-        createdAt: updatedBudget.createdAt || new Date().toISOString(),
-      });
-    }
-    setCurrentBudget(updatedBudget);
-    setBudgets(budgets.map((b) => (b.id === currentBudget.id ? updatedBudget : b)));
-  };
-
-  const handleBudgetSelect = (budget: BudgetData) => {
-    const selectedBudget = budgets.find((b) => b.data === budget);
-    if (selectedBudget) {
-      setCurrentBudget(selectedBudget);
-    }
-  };
-
-  const handleCreateNewBudget = () => {
-    setShowSetup(true);
-  };
 
   // Pie chart helpers (unchanged)
   const COLORS = ["#1976d2", "#f57c00", "#fbc02d"];
@@ -456,6 +439,33 @@ const BudgetBoard = () => {
     fetchLinkToken();
   }, []);
 
+  // Edit budget name
+  const handleEditBudget = (budget: Budget) => {
+    setEditBudgetId(budget.id!);
+    setEditBudgetName(budget.name);
+  };
+  const handleEditBudgetSave = () => {
+    setBudgets(budgets.map(b => b.id === editBudgetId ? { ...b, name: editBudgetName } : b));
+    if (currentBudget && currentBudget.id === editBudgetId) {
+      setCurrentBudget({ ...currentBudget, name: editBudgetName });
+    }
+    setEditBudgetId(null);
+    setEditBudgetName("");
+  };
+  const handleEditBudgetCancel = () => {
+    setEditBudgetId(null);
+    setEditBudgetName("");
+  };
+
+  // Delete budget
+  const handleDeleteBudget = (id: string) => {
+    setBudgets(budgets.filter(b => b.id !== id));
+    if (currentBudget && currentBudget.id === id) {
+      setCurrentBudget(budgets.length > 1 ? budgets.find(b => b.id !== id) || null : null);
+    }
+    setShowDeleteConfirm(null);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="xl" sx={{ mt: 8, mb: 8, position: "relative", px: { xs: 2, sm: 4, md: 6 } }}>
@@ -480,12 +490,16 @@ const BudgetBoard = () => {
             )}
           </Box>
 
-          {!showSetup && !currentBudget && (
+          {!showSetup && (
             <Button
               variant="contained"
               color="primary"
               aria-label="Create a new budget"
-              onClick={() => setShowSetup(true)}
+              onClick={() => {
+                setShowSetup(true);
+                setEditBudgetId(null);
+                setEditBudgetName("");
+              }}
             >
               Create a New Budget
             </Button>
@@ -495,7 +509,10 @@ const BudgetBoard = () => {
             <BudgetSetup
               open={showSetup}
               onClose={() => setShowSetup(false)}
-              onFinish={handleFinishSetup}
+              onFinish={(data, name) => {
+                handleFinishSetup(data, name);
+                setShowSetup(false);
+              }}
             />
           )}
 
@@ -853,9 +870,9 @@ const BudgetBoard = () => {
                 <Grid item xs={12} md={6}>
                   <Box sx={{ width: "100%" }}>
                     <BudgetSummaryChart
-                      data={currentBudget.data}
+                      data={currentBudget?.data || { income: [], expenses: [], savings: [] }}
                       onBudgetSelect={handleBudgetSelect}
-                      currentBudgets={budgets}
+                      currentBudgets={budgets.map(b => ({ name: b.name, data: b.data }))}
                       onCreateBudget={handleCreateNewBudget}
                     />
                   </Box>
@@ -953,6 +970,66 @@ const BudgetBoard = () => {
               {notification?.message}
             </Alert>
           </Snackbar>
+
+          {/* Budget List */}
+          <List>
+            {budgets.map((budget, index) => (
+              <ListItem
+                button
+                key={budget.id || index}
+                onClick={() => handleBudgetSelect(budget.data)}
+                sx={{
+                  borderRadius: 1,
+                  mb: 1,
+                  backgroundColor: currentBudget?.data === budget.data ? "primary.light" : "transparent",
+                  "&:hover": { backgroundColor: "primary.light" },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                {editBudgetId === budget.id ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <TextField
+                      value={editBudgetName}
+                      onChange={e => setEditBudgetName(e.target.value)}
+                      size="small"
+                      sx={{ flex: 1, mr: 1 }}
+                    />
+                    <Button onClick={handleEditBudgetSave} size="small" color="primary" sx={{ mr: 1 }}>Save</Button>
+                    <Button onClick={handleEditBudgetCancel} size="small">Cancel</Button>
+                  </Box>
+                ) : (
+                  <>
+                    <ListItemText
+                      primary={budget.name}
+                      primaryTypographyProps={{ fontWeight: currentBudget?.data === budget.data ? "bold" : "normal" }}
+                    />
+                    <Box>
+                      <IconButton onClick={e => { e.stopPropagation(); handleEditBudget(budget); }} size="small" sx={{ mr: 1 }}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton onClick={e => { e.stopPropagation(); setShowDeleteConfirm(budget.id!); }} size="small" color="error">
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </>
+                )}
+              </ListItem>
+            ))}
+          </List>
+          {showDeleteConfirm && (
+            <Dialog open onClose={() => setShowDeleteConfirm(null)}>
+              <DialogTitle>Delete Budget?</DialogTitle>
+              <DialogContent>
+                Are you sure you want to delete this budget? This action cannot be undone.
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setShowDeleteConfirm(null)}>Cancel</Button>
+                <Button onClick={() => handleDeleteBudget(showDeleteConfirm!)} color="error" variant="contained">Delete</Button>
+              </DialogActions>
+            </Dialog>
+          )}
         </Box>
       </Container>
     </ThemeProvider>
