@@ -149,6 +149,11 @@ export default function TaxPrep() {
   // Predefined categories
   const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Home Office Expenses", "Student Loan Interest", "Mortgage Interest", "Retirement Contributions", "Other"];
 
+  // Recalculate total whenever deductibleExpenses changes
+  useEffect(() => {
+    calculateTotal(deductibleExpenses);
+  }, [deductibleExpenses]);
+
   // Listen for changes to localStorage from other tabs
   useEffect(() => {
     const handleStorageChange = () => {

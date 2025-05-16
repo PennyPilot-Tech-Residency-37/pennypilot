@@ -73,8 +73,7 @@ const BudgetBoard = () => {
     if (!stored) return [];
     try {
       return JSON.parse(stored);
-    } catch (e) {
-      console.error("Failed to parse stored budgets:", e);
+    } catch {
       return [];
     }
   });
@@ -83,8 +82,7 @@ const BudgetBoard = () => {
     if (!stored) return null;
     try {
       return JSON.parse(stored);
-    } catch (e) {
-      console.error("Failed to parse stored current budget:", e);
+    } catch {
       return null;
     }
   });
@@ -114,28 +112,6 @@ const BudgetBoard = () => {
   const [editBudgetName, setEditBudgetName] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-  
-  // 1. Load budgets from localStorage on mount (before Firestore)
-  useEffect(() => {
-    const storedBudgets = localStorage.getItem("budgets");
-    if (storedBudgets) {
-      try {
-        const parsed = JSON.parse(storedBudgets);
-        setBudgets(parsed);
-        if (parsed.length > 0) {
-          setCurrentBudget(parsed[0]);
-        }
-      } catch (e) {
-        console.error("Failed to parse stored budgets from localStorage:", e);
-      }
-    }
-  }, []);
-
-  // 2. Save budgets to localStorage on every change
-  useEffect(() => {
-    localStorage.setItem("budgets", JSON.stringify(budgets));
-  }, [budgets]);
-
   // 3. Load bank accounts from localStorage on mount
   useEffect(() => {
     const storedAccounts = localStorage.getItem("bankAccounts");
@@ -152,32 +128,6 @@ const BudgetBoard = () => {
   useEffect(() => {
     localStorage.setItem("bankAccounts", JSON.stringify(accounts));
   }, [accounts]);
-
-  // Fetch budgets from Firestore on mount
-  useEffect(() => {
-    if (!currentUser) return;
-    const budgetRef = collection(db, "users", currentUser.uid, "budget");
-    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
-    const unsubscribe = onSnapshot(budgetQuery, (snapshot) => {
-      const fetchedBudgets = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name || `Budget ${doc.id}`,
-        data: {
-          income: doc.data().income || [],
-          expenses: doc.data().expenses || [],
-          savings: doc.data().savings || [],
-        },
-        createdAt: doc.data().createdAt,
-      })) as Budget[];
-      setBudgets(fetchedBudgets);
-      if (fetchedBudgets.length > 0) {
-        setCurrentBudget(fetchedBudgets[0]);
-      } else {
-        setCurrentBudget(null);
-      }
-    });
-    return () => unsubscribe();
-  }, [currentUser]);
 
   const { open, ready } = usePlaidLink({
     token: linkToken || '',
@@ -223,22 +173,26 @@ const BudgetBoard = () => {
         },
         createdAt: new Date().toISOString(),
       };
-      setBudgets(prev => {
-        const updated = [...prev, newBudget];
-        localStorage.setItem("budgets", JSON.stringify(updated));
-        return updated;
-      });
+
+      // Append new budget to existing budgets
+      const updatedBudgets = [...budgets, newBudget];
+      setBudgets(updatedBudgets);
+      localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
+
+      // Set as current budget
       setCurrentBudget(newBudget);
       localStorage.setItem("currentBudget", JSON.stringify(newBudget));
+      
       setShowSetup(false);
     };
 
-  // Update budget in Firestore
-  const handleBudgetUpdate = async (
+  // Update budget
+  const handleBudgetUpdate = (
     type: "income" | "expenses" | "savings",
     items: { name: string; amount: string; spent?: string }[]
   ) => {
-    if (!currentBudget || !currentUser) return;
+    if (!currentBudget) return;
+    
     const updatedBudget = {
       ...currentBudget,
       data: {
@@ -246,18 +200,17 @@ const BudgetBoard = () => {
         [type]: items,
       },
     };
-    if (currentBudget.id) {
-      const budgetRef = doc(db, "users", currentUser.uid, "budget", currentBudget.id);
-      await updateDoc(budgetRef, {
-        name: updatedBudget.name,
-        income: updatedBudget.data.income,
-        expenses: updatedBudget.data.expenses,
-        savings: updatedBudget.data.savings,
-        createdAt: updatedBudget.createdAt || new Date().toISOString(),
-      });
-    }
+
+    // Update current budget
     setCurrentBudget(updatedBudget);
-    setBudgets(budgets.map((b) => (b.id === currentBudget.id ? updatedBudget : b)));
+    localStorage.setItem("currentBudget", JSON.stringify(updatedBudget));
+
+    // Update budgets list
+    const updatedBudgets = budgets.map((b) => 
+      b.id === currentBudget.id ? updatedBudget : b
+    );
+    setBudgets(updatedBudgets);
+    localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
   };
 
   const handleBudgetSelect = (budget: BudgetData) => {
@@ -548,7 +501,7 @@ const BudgetBoard = () => {
             )}
           </Box>
 
-          {!showSetup && !currentBudget && (
+          {!showSetup && (
             <Button
               variant="contained"
               color="primary"
