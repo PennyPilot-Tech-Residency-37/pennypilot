@@ -3,9 +3,9 @@ from flask import jsonify, request
 from marshmallow import ValidationError
 from models import LinkedAccount
 from schemas import linked_account_schema
+from key_utils import validate_key
 
 def setup_linked_account_routes(app):
-    # Create linked_account
     @app.route('/linked_accounts', methods=['POST'])
     def create_linked_account():
         try:
@@ -24,13 +24,11 @@ def setup_linked_account_routes(app):
 
         return jsonify({"message": "Account created!"}), 201
 
-    # Read linked_account by id
     @app.route('/linked_accounts/<int:id>', methods=['GET'])
     def read_linked_account(id):
         linked_account = LinkedAccount.query.get_or_404(id)
         return linked_account_schema.jsonify(linked_account)
 
-    # Update linked_account
     @app.route('/linked_accounts/<int:id>', methods=['PUT'])
     def update_linked_account(id):
         linked_account = LinkedAccount.query.get_or_404(id)
@@ -47,7 +45,6 @@ def setup_linked_account_routes(app):
 
         return jsonify({'message': 'Account updated successfully!'}), 200
 
-    # Delete linked_account
     @app.route('/linked_accounts/<int:id>', methods=['DELETE'])
     def delete_linked_account(id):
         linked_account = LinkedAccount.query.get_or_404(id)
@@ -57,11 +54,19 @@ def setup_linked_account_routes(app):
 
         return jsonify({'message': 'Account removed successfully!'})
 
-    # ✅ Read linked_account by associated_user (e.g., Firebase UID)
     @app.route('/api/linked_accounts/<string:user_id>', methods=['GET'])
     def get_linked_account_by_user_id(user_id):
+        print(f"📡 Received request for linked account of user_id: {user_id}")
+
+        key = request.headers.get("key")
+        if not key or not validate_key(db.session, key):
+            print(f"🚫 Invalid or missing API key for user_id: {user_id}")
+            return jsonify({"error": "Unauthorized access"}), 403
+
         linked_account = LinkedAccount.query.filter_by(associated_user=user_id).first()
         if not linked_account:
+            print(f"❌ No linked account found for user_id: {user_id}")
             return jsonify({"error": "Linked account not found"}), 404
 
+        print(f"✅ Found linked account: {linked_account.username}")
         return linked_account_schema.jsonify(linked_account), 200
