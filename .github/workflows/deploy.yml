@@ -14,7 +14,7 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_USER: algorithm_alliance
-          POSTGRES_PASSWORD: IUQPmslw58qYzl9p6WNYTVAiZwojjd2S
+          POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: pennypilot_db
         ports:
           - 5432:5432
