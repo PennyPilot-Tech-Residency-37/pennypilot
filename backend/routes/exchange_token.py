@@ -11,6 +11,7 @@ def setup_exchange_token(app, session):
         data = request.get_json()
         public_token = data.get("public_token")
         input_key = data.get("key")
+        user_id = data.get("user_id")
 
         if not validate_key(session, input_key):
             return jsonify({"error": "Invalid key"}), 403
@@ -21,12 +22,14 @@ def setup_exchange_token(app, session):
             access_token = exchange_response["access_token"]
             item_id = exchange_response["item_id"]
 
-            user_id = data.get(user_id)
             token_entry = AccessToken(user_id=user_id, access_token=access_token, item_id=item_id)
             db.session.add(token_entry)
             db.session.commit()
 
-            return jsonify({"message": "Access token stored successfully", "access_token": access_token})
+            return jsonify({
+                "message": "Access token stored successfully",
+                "access_token": access_token
+            })
         
         except Exception as e:
             app.logger.error(f"Exchange token error: {str(e)}")

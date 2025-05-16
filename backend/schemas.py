@@ -17,7 +17,7 @@ class AccessTokenSchema(ma.Schema):
 class LinkedAccountSchema(ma.Schema):
     username = fields.String(required=True)
     password = fields.String(required=True)
-    associated_user = fields.Integer(required=True)
+    associated_user = fields.String(required=True)
 
     class Meta:
         fields = ('id', 'username', 'password', 'associated_user')
@@ -91,7 +91,7 @@ class BudgetSchema(ma.Schema):
 
 user_schema = UserSchema()
 linked_account_schema = LinkedAccountSchema()
-# transaction_schema = TransactionSchema()
+transaction_schema = TransactionSchema()
 goal_schema = GoalSchema()
 tax_info_schema = TaxInfoSchema()
 income_schema = IncomeSchema()

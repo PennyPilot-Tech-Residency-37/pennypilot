@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Container, Typography, Box, Button, Grid, ThemeProvider, createTheme, List, ListItem, ListItemText, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, TextField, MenuItem, Select, FormControl, InputLabel, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, IconButton } from "@mui/material";
+import { Container, Typography, Box, Button, Grid, ThemeProvider, createTheme, List, ListItem, ListItemText, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, TextField, MenuItem, Select, FormControl, InputLabel, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, IconButton, CircularProgress } from "@mui/material";
 import BudgetSetup from "./BudgetGuide";
 import BudgetGroup from "./BudgetGroup";
 import BudgetSummaryChart from "./BudgetSummaryChart";
@@ -88,7 +88,6 @@ const BudgetBoard = () => {
   });
   const [showSetup, setShowSetup] = useState(false);
   const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [linkReady, setLinkReady] = useState(false);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -111,6 +110,30 @@ const BudgetBoard = () => {
   const [editBudgetId, setEditBudgetId] = useState<string | null>(null);
   const [editBudgetName, setEditBudgetName] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [plaidLoading, setPlaidLoading] = useState(false);
+  // const { fetchLinkToken, openPlaid, ready } = usePlaid();
+
+  
+  // 1. Load budgets from localStorage on mount (before Firestore)
+  useEffect(() => {
+    const storedBudgets = localStorage.getItem("budgets");
+    if (storedBudgets) {
+      try {
+        const parsed = JSON.parse(storedBudgets);
+        setBudgets(parsed);
+        if (parsed.length > 0) {
+          setCurrentBudget(parsed[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse stored budgets from localStorage:", e);
+      }
+    }
+  }, []);
+
+  // 2. Save budgets to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem("budgets", JSON.stringify(budgets));
+  }, [budgets]);
 
   // 3. Load bank accounts from localStorage on mount
   useEffect(() => {
@@ -129,6 +152,36 @@ const BudgetBoard = () => {
     localStorage.setItem("bankAccounts", JSON.stringify(accounts));
   }, [accounts]);
 
+  useEffect(() => {
+    if (!currentUser) return;
+  
+    const budgetRef = collection(db, "users", currentUser.uid, "budget");
+    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
+    console.log("currentUser:", currentUser?.uid);
+
+    const unsubscribe = onSnapshot(budgetQuery, (snapshot) => {
+      const fetchedBudgets = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name || `Budget ${doc.id}`,
+        data: {
+          income: doc.data().income || [],
+          expenses: doc.data().expenses || [],
+          savings: doc.data().savings || [],
+        },
+        createdAt: doc.data().createdAt,
+      }));
+      setBudgets(fetchedBudgets);
+      setCurrentBudget(fetchedBudgets[0] || null);
+    });
+  
+    return () => unsubscribe();
+  }, [currentUser]);
+  
+  useEffect(() => {
+    console.log("CurrentUser UID:", currentUser?.uid);
+  }, [currentUser]);
+  
+
   const { open, ready } = usePlaidLink({
     token: linkToken || '',
     onSuccess: async (public_token, metadata) => {
@@ -142,25 +195,33 @@ const BudgetBoard = () => {
       } catch (err) {
         console.error('❌ Error exchanging token:', err);
       }
-    },
-    onLoad: () => {
-      setLinkReady(true);
-    },
+    }
   });
+  
 
   const handleConnectBank = async () => {
+    setPlaidLoading(true);
     try {
       const res = await axios.post("/api/create_link_token", {
         key: "dev-test-key",
         user_id: currentUser?.uid,
-            });
-        const token = res.data.link_token;
-        setLinkToken(token);
-        console.log("✅ Link token received:", token);
-      } catch (err) {
-        console.error("❌ Failed to fetch link token:", err);
-      }
-    };
+      });
+      const token = res.data.link_token;
+      setLinkToken(token);
+    } catch (err) {
+      console.error("❌ Failed to fetch link token:", err);
+      setPlaidLoading(false);
+    }
+  };  
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+      setPlaidLoading(false);
+    }
+  }, [linkToken, ready]);
+  
+  
+  
 
     const handleFinishSetup = async (data: BudgetData, name: string) => {
       const newBudget = {
@@ -232,9 +293,9 @@ const BudgetBoard = () => {
           'key': 'dev-test-key'
         }
       });
-      if (res.data && res.data.length > 0) {
-        setAccounts(res.data);
-      }
+      if (res.data) {
+        setAccounts([res.data]);
+      }      
     } catch (err) {
       console.error('❌ Error fetching accounts:', err);
     } finally {
@@ -563,34 +624,39 @@ const BudgetBoard = () => {
                 maxHeight: "300px",
               }}
             />
-            <Button
-              variant="contained"
-              color="primary"
-              // onClick={openPlaid}
-              // disabled={!ready}
-              sx={{
-                px: 3,
-                py: 1.25,
-                fontSize: { xs: "0.95rem", sm: "1rem" },
-                fontWeight: 700,
-                borderRadius: 2,
-                boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
-                background: "#fbc02d",
-                color: "#fff",
-                '&:hover': {
-                  background: "#e6ac00",
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleConnectBank}
+                disabled={plaidLoading}
+                sx={{
+                  px: 3,
+                  py: 1.25,
+                  fontSize: { xs: "0.95rem", sm: "1rem" },
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
+                  background: "#fbc02d",
                   color: "#fff",
-                  boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
-                },
-                '&:active': {
-                  boxShadow: "0 2px 8px rgba(25, 118, 210, 0.18)",
-                  background: "#c49000",
-                },
-              }}
-            >
-              Connect Your Bank Account
-            </Button>
-          </Box>
+                  '&:hover': {
+                    background: "#e6ac00",
+                    color: "#fff",
+                    boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
+                  },
+                  '&:active': {
+                    boxShadow: "0 2px 8px rgba(25, 118, 210, 0.18)",
+                    background: "#c49000",
+                  },
+                }}
+              >
+                {plaidLoading ? (
+                  <CircularProgress size={22} sx={{ color: "white" }} />
+                ) : (
+                  "Connect Your Bank Account"
+                )}
+              </Button>
+              </Box>
+
 
           {/* Connected Accounts Section */}
           <Box sx={{ mt: 4, mb: 4, width: '100%' }}>
