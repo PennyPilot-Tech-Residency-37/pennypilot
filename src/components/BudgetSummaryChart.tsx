@@ -87,6 +87,7 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
             onClick={() => onCreateBudget("")}
             sx={{
               maxWidth: 250,
+              maxHeight: 50,
               mx: "auto",
               py: { xs: 1.5, sm: 2 },
               fontSize: { xs: "0.875rem", sm: "1rem" },
