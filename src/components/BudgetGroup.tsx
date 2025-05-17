@@ -94,7 +94,7 @@ const SortableItem = ({
   const calculateActual = () => {
     const filterCategory = title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings";
     return transactions
-      .filter((t) => t.category === filterCategory && t.description.toLowerCase().includes(item.name.toLowerCase()))
+      .filter((t) => t.category === filterCategory && (t.description ?? "").toLowerCase().includes((item.name ?? "").toLowerCase()))
       .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
       .toFixed(2);
   };
@@ -221,7 +221,7 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
             transactions
               .filter((t) =>
                 t.category === (title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings") &&
-                t.description.toLowerCase().includes(item.name.toLowerCase())
+              (t.description ?? "").toLowerCase().includes(item.name.toLowerCase())
               )
               .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
               .toFixed(2)
@@ -230,7 +230,7 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
             transactions
               .filter((t) =>
                 t.category === (title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings") &&
-                t.description.toLowerCase().includes(item.name.toLowerCase())
+              (t.description ?? "").toLowerCase().includes(item.name.toLowerCase())
               )
               .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
               .toFixed(2)
@@ -264,7 +264,7 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
           transactions
             .filter((t) =>
               t.category === (title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings") &&
-              t.description.toLowerCase().includes(item.name.toLowerCase())
+            (t.description ?? "").toLowerCase().includes((item.name ?? "").toLowerCase())
             )
             .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
             .toFixed(2)

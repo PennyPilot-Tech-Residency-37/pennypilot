@@ -4,6 +4,9 @@ from marshmallow import ValidationError
 from models import LinkedAccount
 from schemas import linked_account_schema
 from key_utils import validate_key
+from plaid.model.accounts_get_request import AccountsGetRequest
+from plaid_client_config import client
+from models import AccessToken
 
 def setup_linked_account_routes(app):
     @app.route('/linked_accounts', methods=['POST'])
@@ -55,18 +58,26 @@ def setup_linked_account_routes(app):
         return jsonify({'message': 'Account removed successfully!'})
 
     @app.route('/api/linked_accounts/<string:user_id>', methods=['GET'])
-    def get_linked_account_by_user_id(user_id):
-        print(f"📡 Received request for linked account of user_id: {user_id}")
+    def get_linked_accounts(user_id):
+        print(f"📡 Getting linked accounts for user_id: {user_id}")
 
         key = request.headers.get("key")
         if not key or not validate_key(db.session, key):
-            print(f"🚫 Invalid or missing API key for user_id: {user_id}")
             return jsonify({"error": "Unauthorized access"}), 403
 
-        linked_account = LinkedAccount.query.filter_by(associated_user=user_id).first()
-        if not linked_account:
-            print(f"❌ No linked account found for user_id: {user_id}")
-            return jsonify({"error": "Linked account not found"}), 404
+        access_token_entry = AccessToken.query.filter_by(user_id=user_id).first()
+        if not access_token_entry:
+            print(f"❌ No access token found for user_id: {user_id}")
+            return jsonify({"error": "Access token not found"}), 404
 
-        print(f"✅ Found linked account: {linked_account.username}")
-        return linked_account_schema.jsonify(linked_account), 200
+        try:
+            plaid_request = AccountsGetRequest(access_token=access_token_entry.access_token)
+            response = client.accounts_get(plaid_request)
+            accounts = response.to_dict()["accounts"]
+
+            print(f"✅ Found {len(accounts)} account(s)")
+            return jsonify(accounts), 200
+
+        except Exception as e:
+            print(f"❌ Error fetching accounts: {str(e)}")
+            return jsonify({"error": str(e)}), 500
