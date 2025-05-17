@@ -6,12 +6,13 @@ import BudgetSummaryChart from "./BudgetSummaryChart";
 import { BudgetData } from "../types/types";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { db } from "../types/firebaseConfig";
-import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
+// import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
 import { useAuth } from "../context/auth";
 import { usePlaidLink } from 'react-plaid-link';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { categorizeTransactions } from "../utils/categorizeTransactions";
 import { Add as AddIcon, Notifications as NotificationsIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 interface Budget {
@@ -111,6 +112,7 @@ const BudgetBoard = () => {
   const [editBudgetName, setEditBudgetName] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [plaidLoading, setPlaidLoading] = useState(false);
+  const isDashboardReady = currentBudget && accounts.length > 0 && transactions.length > 0;
   // const { fetchLinkToken, openPlaid, ready } = usePlaid();
 
   
@@ -120,15 +122,21 @@ const BudgetBoard = () => {
     if (storedBudgets) {
       try {
         const parsed = JSON.parse(storedBudgets);
-        setBudgets(parsed);
-        if (parsed.length > 0) {
-          setCurrentBudget(parsed[0]);
+        // Ensure each budget has a fallback ID if missing
+        const fixed = parsed.map((b: any, index: number) => ({
+          ...b,
+          id: b.id || `local-${index}-${Date.now()}`
+        }));
+        setBudgets(fixed);
+        if (fixed.length > 0) {
+          setCurrentBudget(fixed[0]);
         }
       } catch (e) {
         console.error("Failed to parse stored budgets from localStorage:", e);
       }
     }
   }, []);
+  
 
   // 2. Save budgets to localStorage on every change
   useEffect(() => {
@@ -176,17 +184,61 @@ const BudgetBoard = () => {
     token: linkToken || '',
     onSuccess: async (public_token, metadata) => {
       try {
+        // 1. Exchange token
         const res = await axios.post("/api/exchange_public_token", {
           public_token,
           key: 'dev-test-key',
           user_id: currentUser?.uid,
         });
         console.log('✅ Access token exchange successful:', res.data);
+  
+        // 2. Fetch accounts
+        await fetchAccounts();
+  
+        // 3. Fetch transactions
+        const txRes = await axios.get(`/api/transactions`, {
+          params: {
+            user_id: currentUser?.uid,
+            start_date: dateRange.start,
+            end_date: dateRange.end
+          },
+          headers: {
+            key: 'dev-test-key'
+          }
+        });
+  
+        // 4. Categorize transactions
+        const categorized = categorizeTransactions(txRes.data.transactions);
+  
+        // 5. Generate new budget from categorized transactions
+        const newBudget: Budget = {
+          id: Date.now().toString(),
+          name: `Auto Budget - ${new Date().toLocaleDateString()}`,
+          data: {
+            income: categorized.income.map(t => ({ name: t.description, amount: Math.abs(t.amount).toString() })),
+            expenses: categorized.expenses.map(t => ({ name: t.description, amount: Math.abs(t.amount).toString() })),
+            savings: categorized.savings.map(t => ({ name: t.description, amount: Math.abs(t.amount).toString() }))
+          },
+          createdAt: new Date().toISOString()
+        };
+  
+        // 6. Update UI state
+        const updatedBudgets = [...budgets, newBudget];
+        setBudgets(updatedBudgets);
+        setCurrentBudget(newBudget);
+        localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
+        localStorage.setItem("currentBudget", JSON.stringify(newBudget));
+  
+        // 7. Show success message
+        setNotification({ message: "Your budget was created from your bank data!", type: "success" });
+  
       } catch (err) {
-        console.error('❌ Error exchanging token:', err);
+        console.error('❌ Error creating budget from Plaid data:', err);
+        setNotification({ message: "Something went wrong while generating your budget.", type: "error" });
       }
     }
   });
+  
   
 
   const handleConnectBank = async () => {
@@ -369,13 +421,10 @@ const BudgetBoard = () => {
         }
       });
       
-      // Auto-categorize uncategorized transactions
-      const categorizedTransactions = res.data.transactions.map((t: Transaction) => ({
-        ...t,
-        category: t.category || autoCategorizeTransaction(t.description)
-      }));
+      const categorized = categorizeTransactions(res.data.transactions);
+      const merged = [...categorized.income, ...categorized.expenses, ...categorized.savings];
       
-      setTransactions(categorizedTransactions);
+      setTransactions(merged);
       setAnalytics(res.data.analytics);
     } catch (err) {
       console.error('❌ Error fetching transactions:', err);
@@ -386,7 +435,7 @@ const BudgetBoard = () => {
 
   // Filter transactions based on search and category
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (transaction.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || transaction.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -551,8 +600,42 @@ const BudgetBoard = () => {
               </Typography>
             )}
           </Box>
+          <Box
+  sx={{
+    display: "flex",
+    justifyContent: isDashboardReady ? "flex-end" : "center",
+    alignItems: "center",
+    width: "100%",
+    mt: isDashboardReady ? 0 : 6,
+    mb: isDashboardReady ? 2 : 4,
+    flexWrap: "wrap",
+    gap: 2,
+  }}
+>
+  <Button
+    variant="contained"
+    onClick={() => {
+      setShowSetup(true);
+      setEditBudgetId(null);
+      setEditBudgetName("");
+    }}
+  >
+    Create a New Budget
+  </Button>
 
-          {!showSetup && (
+  <Button
+    variant="outlined"
+    onClick={handleConnectBank}
+    disabled={plaidLoading}
+  >
+    {plaidLoading ? <CircularProgress size={20} /> : "Connect Bank Account"}
+  </Button>
+</Box>
+
+
+
+
+          {/* {!showSetup && (
             <Button
               variant="contained"
               color="primary"
@@ -576,7 +659,7 @@ const BudgetBoard = () => {
             >
               Create a New Budget
             </Button>
-          )}
+          )} */}
 
           {showSetup && (
             <BudgetSetup
@@ -590,6 +673,7 @@ const BudgetBoard = () => {
           )}
 
           {/* Bank image background with button overlay */}
+          {(!currentBudget || accounts.length === 0) && (
           <Box
             sx={{
               position: "relative",
@@ -625,7 +709,7 @@ const BudgetBoard = () => {
                 maxHeight: "300px",
               }}
             />
-              <Button
+              {/* <Button
                 variant="contained"
                 color="primary"
                 onClick={handleConnectBank}
@@ -655,8 +739,10 @@ const BudgetBoard = () => {
                 ) : (
                   "Connect Your Bank Account"
                 )}
-              </Button>
+              </Button> */}
               </Box>
+              )}
+
 
 
           {/* Connected Accounts Section */}
@@ -670,7 +756,7 @@ const BudgetBoard = () => {
               <List>
                 {accounts.map((account) => (
                   <ListItem 
-                    key={account.id} 
+                    key={account.account_id}
                     sx={{ 
                       bgcolor: 'background.paper',
                       mb: 1,
@@ -681,13 +767,13 @@ const BudgetBoard = () => {
                         bgcolor: 'action.hover'
                       }
                     }}
-                    onClick={() => setSelectedAccount(account.id)}
+                    onClick={() => setSelectedAccount(account.account_id)}
                   >
                     <ListItemText
                       primary={account.name}
                       secondary={`Balance: $${parseFloat(account.balance).toFixed(2)}`}
                     />
-                    {selectedAccount === account.id && (
+                    {selectedAccount === account.account_id && (
                       <Chip label="Selected" color="primary" size="small" />
                     )}
                   </ListItem>
@@ -912,7 +998,7 @@ const BudgetBoard = () => {
             </Box>
           )}
 
-          {currentBudget && (
+          {currentBudget && accounts.length > 0 && transactions.length > 0 && (
             <Box
               sx={{
                 border: "2px solid #e0e0e0",
@@ -1051,6 +1137,65 @@ const BudgetBoard = () => {
               {notification?.message}
             </Alert>
           </Snackbar>
+          {/* Budget List */}
+          <List>
+            {budgets.map((budget, index) => (
+              <ListItem
+                button
+                key={budget.id}
+                onClick={() => handleBudgetSelect(budget.data)}
+                sx={{
+                  borderRadius: 1,
+                  mb: 1,
+                  backgroundColor: currentBudget?.data === budget.data ? "primary.light" : "transparent",
+                  "&:hover": { backgroundColor: "primary.light" },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                {editBudgetId === budget.id ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <TextField
+                      value={editBudgetName}
+                      onChange={e => setEditBudgetName(e.target.value)}
+                      size="small"
+                      sx={{ flex: 1, mr: 1 }}
+                    />
+                    <Button onClick={handleEditBudgetSave} size="small" color="primary" sx={{ mr: 1 }}>Save</Button>
+                    <Button onClick={handleEditBudgetCancel} size="small">Cancel</Button>
+                  </Box>
+                ) : (
+                  <>
+                    <ListItemText
+                      primary={budget.name}
+                      primaryTypographyProps={{ fontWeight: currentBudget?.data === budget.data ? "bold" : "normal" }}
+                    />
+                    <Box>
+                      <IconButton onClick={e => { e.stopPropagation(); handleEditBudget(budget); }} size="small" sx={{ mr: 1 }}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton onClick={e => { e.stopPropagation(); setShowDeleteConfirm(budget.id!); }} size="small" color="error">
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </>
+                )}
+              </ListItem>
+            ))}
+          </List>
+          {showDeleteConfirm && (
+            <Dialog open onClose={() => setShowDeleteConfirm(null)}>
+              <DialogTitle>Delete Budget?</DialogTitle>
+              <DialogContent>
+                Are you sure you want to delete this budget? This action cannot be undone.
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setShowDeleteConfirm(null)}>Cancel</Button>
+                <Button onClick={() => handleDeleteBudget(showDeleteConfirm!)} color="error" variant="contained">Delete</Button>
+              </DialogActions>
+            </Dialog>
+          )}
         </Box>
       </Container>
     </ThemeProvider>

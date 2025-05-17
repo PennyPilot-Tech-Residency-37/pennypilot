@@ -27,7 +27,7 @@ def setup_create_link_token(app, session):
             client_name="PennyPilot",
             country_codes=[CountryCode('US')],
             language="en",
-            products=[Products("auth")],
+            products=[Products("auth"), Products("transactions")],
             user=LinkTokenCreateRequestUser(client_user_id=user_id),
         )
 
