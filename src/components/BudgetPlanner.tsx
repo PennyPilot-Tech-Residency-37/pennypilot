@@ -335,8 +335,9 @@ const BudgetBoard = () => {
           'key': 'dev-test-key'
         }
       });
+      console.log("Accounts fetched from backend:", res.data);
       if (res.data) {
-        setAccounts([res.data]);
+        setAccounts(res.data);
       }      
     } catch (err) {
       console.error('❌ Error fetching accounts:', err);
@@ -432,6 +433,8 @@ const BudgetBoard = () => {
       setLoadingTransactions(false);
     }
   };
+  console.log('Accounts List:', accounts.map(a => a.account_id));
+
 
   // Filter transactions based on search and category
   const filteredTransactions = transactions.filter(transaction => {
@@ -771,7 +774,12 @@ const BudgetBoard = () => {
                   >
                     <ListItemText
                       primary={account.name}
-                      secondary={`Balance: $${parseFloat(account.balance).toFixed(2)}`}
+                      secondary={
+                        account.balances?.current !== undefined && !isNaN(account.balances.current)
+                          ? `Balance: $${account.balances.current.toFixed(2)}`
+                          : "Balance: N/A"
+                      }
+                      
                     />
                     {selectedAccount === account.account_id && (
                       <Chip label="Selected" color="primary" size="small" />
