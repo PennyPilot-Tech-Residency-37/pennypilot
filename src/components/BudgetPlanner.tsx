@@ -152,35 +152,25 @@ const BudgetBoard = () => {
     localStorage.setItem("bankAccounts", JSON.stringify(accounts));
   }, [accounts]);
 
+  // Add a localStorage event listener for real-time sync across tabs
   useEffect(() => {
-    if (!currentUser) return;
-  
-    const budgetRef = collection(db, "users", currentUser.uid, "budget");
-    const budgetQuery = query(budgetRef, orderBy("createdAt", "asc"));
-    console.log("currentUser:", currentUser?.uid);
-
-    const unsubscribe = onSnapshot(budgetQuery, (snapshot) => {
-      const fetchedBudgets = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name || `Budget ${doc.id}`,
-        data: {
-          income: doc.data().income || [],
-          expenses: doc.data().expenses || [],
-          savings: doc.data().savings || [],
-        },
-        createdAt: doc.data().createdAt,
-      }));
-      setBudgets(fetchedBudgets);
-      setCurrentBudget(fetchedBudgets[0] || null);
-    });
-  
-    return () => unsubscribe();
-  }, [currentUser]);
-  
-  useEffect(() => {
-    console.log("CurrentUser UID:", currentUser?.uid);
-  }, [currentUser]);
-  
+    const handleStorage = () => {
+      const storedBudgets = localStorage.getItem("budgets");
+      if (storedBudgets) {
+        try {
+          setBudgets(JSON.parse(storedBudgets));
+        } catch {}
+      }
+      const storedCurrent = localStorage.getItem("currentBudget");
+      if (storedCurrent) {
+        try {
+          setCurrentBudget(JSON.parse(storedCurrent));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const { open, ready } = usePlaidLink({
     token: linkToken || '',
@@ -567,6 +557,17 @@ const BudgetBoard = () => {
               variant="contained"
               color="primary"
               aria-label="Create a new budget"
+              size="small"
+              sx={{
+                px: 2,
+                py: 0.5,
+                fontSize: '0.85rem',
+                minWidth: 0,
+                width: 'fit-content',
+                borderRadius: 2,
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(25, 118, 210, 0.10)',
+              }}
               onClick={() => {
                 setShowSetup(true);
                 setEditBudgetId(null);
@@ -1050,65 +1051,6 @@ const BudgetBoard = () => {
               {notification?.message}
             </Alert>
           </Snackbar>
-          {/* Budget List */}
-          <List>
-            {budgets.map((budget, index) => (
-              <ListItem
-                button
-                key={budget.id || index}
-                onClick={() => handleBudgetSelect(budget.data)}
-                sx={{
-                  borderRadius: 1,
-                  mb: 1,
-                  backgroundColor: currentBudget?.data === budget.data ? "primary.light" : "transparent",
-                  "&:hover": { backgroundColor: "primary.light" },
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                {editBudgetId === budget.id ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <TextField
-                      value={editBudgetName}
-                      onChange={e => setEditBudgetName(e.target.value)}
-                      size="small"
-                      sx={{ flex: 1, mr: 1 }}
-                    />
-                    <Button onClick={handleEditBudgetSave} size="small" color="primary" sx={{ mr: 1 }}>Save</Button>
-                    <Button onClick={handleEditBudgetCancel} size="small">Cancel</Button>
-                  </Box>
-                ) : (
-                  <>
-                    <ListItemText
-                      primary={budget.name}
-                      primaryTypographyProps={{ fontWeight: currentBudget?.data === budget.data ? "bold" : "normal" }}
-                    />
-                    <Box>
-                      <IconButton onClick={e => { e.stopPropagation(); handleEditBudget(budget); }} size="small" sx={{ mr: 1 }}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton onClick={e => { e.stopPropagation(); setShowDeleteConfirm(budget.id!); }} size="small" color="error">
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </>
-                )}
-              </ListItem>
-            ))}
-          </List>
-          {showDeleteConfirm && (
-            <Dialog open onClose={() => setShowDeleteConfirm(null)}>
-              <DialogTitle>Delete Budget?</DialogTitle>
-              <DialogContent>
-                Are you sure you want to delete this budget? This action cannot be undone.
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setShowDeleteConfirm(null)}>Cancel</Button>
-                <Button onClick={() => handleDeleteBudget(showDeleteConfirm!)} color="error" variant="contained">Delete</Button>
-              </DialogActions>
-            </Dialog>
-          )}
         </Box>
       </Container>
     </ThemeProvider>
