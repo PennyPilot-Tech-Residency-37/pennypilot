@@ -160,11 +160,25 @@ const BudgetBoard = () => {
     localStorage.setItem("bankAccounts", JSON.stringify(accounts));
   }, [accounts]);
 
-  
+  // Add a localStorage event listener for real-time sync across tabs
   useEffect(() => {
-    console.log("CurrentUser UID:", currentUser?.uid);
-  }, [currentUser]);
-  
+    const handleStorage = () => {
+      const storedBudgets = localStorage.getItem("budgets");
+      if (storedBudgets) {
+        try {
+          setBudgets(JSON.parse(storedBudgets));
+        } catch {}
+      }
+      const storedCurrent = localStorage.getItem("currentBudget");
+      if (storedCurrent) {
+        try {
+          setCurrentBudget(JSON.parse(storedCurrent));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const { open, ready } = usePlaidLink({
     token: linkToken || '',
@@ -626,6 +640,17 @@ const BudgetBoard = () => {
               variant="contained"
               color="primary"
               aria-label="Create a new budget"
+              size="small"
+              sx={{
+                px: 2,
+                py: 0.5,
+                fontSize: '0.85rem',
+                minWidth: 0,
+                width: 'fit-content',
+                borderRadius: 2,
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(25, 118, 210, 0.10)',
+              }}
               onClick={() => {
                 setShowSetup(true);
                 setEditBudgetId(null);

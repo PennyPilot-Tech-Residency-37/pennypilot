@@ -19,6 +19,8 @@ import {
   differenceInWeeks,
   differenceInMonths,
 } from "date-fns";
+import { usePlaid } from "../context/PlaidContext";
+import { usePlaidLink } from "react-plaid-link";
 
 interface UserData {
   budgetSet: boolean;
@@ -183,7 +185,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string>("");
   const [plaidAccounts, setPlaidAccounts] = useState<any[]>([]);
   const [plaidTransactions, setPlaidTransactions] = useState<any[]>([]);
-  const [plaidLoading, setPlaidLoading] = useState(true);
+  const [plaidLoading, setPlaidLoading] = useState(false);
   const [plaidError, setPlaidError] = useState<string | null>(null);
   const [usingCache, setUsingCache] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
@@ -202,6 +204,8 @@ export default function Dashboard() {
       return [];
     }
   });
+  const { fetchLinkToken, openPlaid, ready } = usePlaid();
+  const [linkToken, setLinkToken] = useState<string | null>(null);
 
   const calculateSavingsTotal = (savings: DeductibleExpense[]): number => {
     return savings.reduce((sum: number, item: DeductibleExpense) => {
@@ -456,6 +460,47 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem("plaidAccounts", JSON.stringify(plaidAccounts));
   }, [plaidAccounts]);
+
+  // Plaid Link hook
+  const { open: plaidLinkOpen, ready: plaidLinkReady } = usePlaidLink({
+    token: linkToken || '',
+    onSuccess: async (public_token, metadata) => {
+      try {
+        await axios.post("/api/exchange_public_token", {
+          public_token,
+          key: "dev-test-key",
+          user_id: currentUser?.uid,
+        });
+      } catch (err) {
+        console.error("❌ Error exchanging public token:", err);
+      }
+    },
+    onExit: (err, metadata) => {
+      if (err) console.error("Plaid Link error:", err);
+    },
+  });
+
+  const handleConnectBank = async () => {
+    setPlaidLoading(true);
+    try {
+      const res = await axios.post("/api/create_link_token", {
+        key: "dev-test-key",
+        user_id: currentUser?.uid,
+      });
+      setLinkToken(res.data.link_token);
+    } catch (err) {
+      console.error("Failed to fetch Plaid link token:", err);
+      setPlaidLoading(false);
+    }
+  };
+
+  // Open Plaid modal when ready and linkToken is set
+  useEffect(() => {
+    if (linkToken && plaidLinkReady) {
+      plaidLinkOpen();
+      setPlaidLoading(false);
+    }
+  }, [linkToken, plaidLinkReady, plaidLinkOpen]);
 
   return (
     <Box
@@ -923,13 +968,51 @@ export default function Dashboard() {
               Bank Accounts {usingCache && "(Cached)"}
             </Typography>
           </Box>
-          
-          <br />
-          {plaidLoading && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 1 }}>
-              <LoadingSpinner />
-            </Box>
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            {plaidLoading && (
+              <Box
+                component="img"
+                src="/images/PennyPilot-logo.png"
+                alt="Loading..."
+                sx={{
+                  width: 40,
+                  height: 40,
+                  animation: 'spin 1s linear infinite',
+                  '@keyframes spin': {
+                    '0%': { transform: 'rotate(0deg)' },
+                    '100%': { transform: 'rotate(360deg)' }
+                  }
+                }}
+              />
+            )}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleConnectBank}
+              disabled={plaidLoading}
+              sx={{
+                px: 3,
+                py: 1.25,
+                fontSize: { xs: "0.95rem", sm: "1rem" },
+                fontWeight: 700,
+                borderRadius: 2,
+                boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
+                background: "#fbc02d",
+                color: "#fff",
+                '&:hover': {
+                  background: "#e6ac00",
+                  color: "#fff",
+                  boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
+                },
+                '&:active': {
+                  boxShadow: "0 2px 8px rgba(25, 118, 210, 0.18)",
+                  background: "#c49000",
+                },
+              }}
+            >
+              Connect Your Bank Account
+            </Button>
+          </Box>
           {plaidError && <Alert severity={usingCache ? "warning" : "error"}>{plaidError}</Alert>}
           <List>
             {plaidAccounts.map((acct: any) => (
