@@ -9,8 +9,16 @@ import {
   ListItemText,
   ThemeProvider,
   createTheme,
+  IconButton,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { BudgetData } from "../types/types";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const COLORS = ["#1976d2", "#f57c00", "#fbc02d"];
 
@@ -46,6 +54,11 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
     { name: "Savings", value: sum(data.savings) },
   ];
 
+  // Add state for editing and deleting
+  const [editBudgetId, setEditBudgetId] = React.useState<string | null>(null);
+  const [editBudgetName, setEditBudgetName] = React.useState<string>("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState<string | null>(null);
+
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ position: "relative", width: "100%", px: 2 }}>
@@ -73,7 +86,7 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
             fullWidth
             onClick={() => onCreateBudget("")}
             sx={{
-              maxWidth: 400,
+              maxWidth: 250,
               mx: "auto",
               py: { xs: 1.5, sm: 2 },
               fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -90,7 +103,7 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
           </Button>
         </Box>
 
-        {/* List of User Budgets */}
+        {/* List of User Budgets with edit/delete */}
         <Box
           sx={{
             mt: { xs: 12, sm: 14, md: 16 },
@@ -108,27 +121,67 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
             Your Budgets
           </Typography>
           <List sx={{ maxHeight: 150, overflowY: "auto" }}>
-            {currentBudgets.map((budget, index) => (
-              <ListItem
-                button
-                key={index}
-                onClick={() => onBudgetSelect(budget.data)}
-                sx={{
-                  borderRadius: 1,
-                  mb: 1,
-                  backgroundColor: data === budget.data ? "primary.light" : "transparent",
-                  "&:hover": { backgroundColor: "primary.light" },
-                }}
-              >
-                <ListItemText
-                  primary={budget.name}
-                  primaryTypographyProps={{ fontWeight: data === budget.data ? "bold" : "normal", fontSize: { xs: "0.875rem", sm: "1rem" } }}
-                />
-              </ListItem>
-            ))}
+            {currentBudgets.map((budget, index) => {
+              const budgetKey = (budget as any).id || index;
+              return (
+                <ListItem
+                  button
+                  key={budgetKey}
+                  onClick={() => onBudgetSelect(budget.data)}
+                  sx={{
+                    borderRadius: 1,
+                    mb: 1,
+                    backgroundColor: data === budget.data ? "primary.light" : "transparent",
+                    "&:hover": { backgroundColor: "primary.light" },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  {editBudgetId === String(budgetKey) ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                      <TextField
+                        value={editBudgetName}
+                        onChange={e => setEditBudgetName(e.target.value)}
+                        size="small"
+                        sx={{ flex: 1, mr: 1 }}
+                      />
+                      <Button onClick={() => {/* handleEditBudgetSave */}} size="small" color="primary" sx={{ mr: 1 }}>Save</Button>
+                      <Button onClick={() => setEditBudgetId(null)} size="small">Cancel</Button>
+                    </Box>
+                  ) : (
+                    <>
+                      <ListItemText
+                        primary={budget.name}
+                        primaryTypographyProps={{ fontWeight: data === budget.data ? "bold" : "normal", fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                      />
+                      <Box>
+                        <IconButton onClick={e => { e.stopPropagation(); setEditBudgetId(String(budgetKey)); setEditBudgetName(budget.name); }} size="small" sx={{ mr: 1 }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton onClick={e => { e.stopPropagation(); setShowDeleteConfirm(String(budgetKey)); }} size="small" color="error">
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </>
+                  )}
+                </ListItem>
+              );
+            })}
           </List>
         </Box>
-
+        {showDeleteConfirm && (
+          <Dialog open onClose={() => setShowDeleteConfirm(null)}>
+            <DialogTitle>Delete Budget?</DialogTitle>
+            <DialogContent>
+              Are you sure you want to delete this budget? <b>All information will be permanently deleted.</b>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowDeleteConfirm(null)}>Cancel</Button>
+              <Button onClick={() => {/* handleDeleteBudget(showDeleteConfirm) */}} color="error" variant="contained">Delete</Button>
+            </DialogActions>
+          </Dialog>
+        )}
         {/* Pie Chart for Budget Breakdown */}
         <Box
           sx={{
