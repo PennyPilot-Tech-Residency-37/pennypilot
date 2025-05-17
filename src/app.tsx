@@ -9,6 +9,7 @@ import Goals from "./components/Goals";
 import Footer from "./components/Footer";
 
 import { AuthProvider, useAuth } from "./context/auth";
+import { PlaidProvider } from "./context/PlaidContext";
 
 function AppRoutes() {
   const { currentUser } = useAuth();
@@ -26,15 +27,17 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-          <Navbar />
-          <Box sx={{ flex: 1 }}>
-            <AppRoutes />
+      <PlaidProvider>
+        <BrowserRouter>
+          <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+            <Navbar />
+            <Box sx={{ flex: 1 }}>
+              <AppRoutes />
+            </Box>
+            <Footer />
           </Box>
-          <Footer />
-        </Box>
-      </BrowserRouter>
+        </BrowserRouter>
+      </PlaidProvider>
     </AuthProvider>
   );
 }
