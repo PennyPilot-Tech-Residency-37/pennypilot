@@ -1,5 +1,6 @@
 from config import db, app
 import sqlalchemy as sa
+import os
 
 class User(db.Model):
     __tablename__ = 'Users'
@@ -91,5 +92,7 @@ class AccessToken(db.Model):
     # access_token = db.Column(db.String, nullable=False)
     # item_id = db.Column(db.String, nullable=False)
 
-with app.app_context():
-    db.create_all()
+# Only run db.create_all() if FLASK_ENV is set to development
+if os.getenv("FLASK_ENV") == "development":
+    with app.app_context():
+        db.create_all()
