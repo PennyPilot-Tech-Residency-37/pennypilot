@@ -241,7 +241,7 @@ const BudgetSetup: React.FC<BudgetSetupProps> = ({ open, onFinish, onClose }) =>
     <Backdrop
       open={open}
       onClick={onClose}
-      sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1, backdropFilter: "blur(6px)" }}
+      sx={{ color: "#fff", zIndex: 9999, backdropFilter: "blur(6px)" }}
     >
       <Box
         sx={{

@@ -49,13 +49,24 @@ const GoalsPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Add safe localStorage handling
+  const safeSetLocalStorage = (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      if (e instanceof Error && e.name === 'QuotaExceededError') {
+        console.error("Storage limit reached. Please backup and clear some data.");
+      }
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem("goals", JSON.stringify(goals));
+    safeSetLocalStorage("goals", goals);
   }, [goals]);
 
   useEffect(() => {
     if (activeGoalId !== null) {
-      localStorage.setItem("activeGoalId", activeGoalId.toString());
+      safeSetLocalStorage("activeGoalId", activeGoalId.toString());
     }
   }, [activeGoalId]);
 
@@ -63,6 +74,44 @@ const GoalsPage = () => {
     if (goals.length > 0 && !goals.find((g) => g.id === activeGoalId)) {
       setActiveGoalId(goals[0].id);
     }
+  }, [goals, activeGoalId]);
+
+  // Add backup functionality
+  const backupGoals = () => {
+    try {
+      const backupData = {
+        goals,
+        activeGoalId,
+        lastBackup: new Date().toISOString(),
+      };
+      safeSetLocalStorage("goalsBackup", backupData);
+    } catch (err) {
+      console.error("Failed to backup goals:", err);
+    }
+  };
+
+  // Restore goals from backup
+  const restoreGoals = () => {
+    try {
+      const stored = localStorage.getItem("goalsBackup");
+      if (stored) {
+        const backupData = JSON.parse(stored);
+        setGoals(backupData.goals.map((goal: any) => ({
+          ...goal,
+          startDate: new Date(goal.startDate),
+          dueDate: new Date(goal.dueDate),
+        })));
+        setActiveGoalId(backupData.activeGoalId);
+      }
+    } catch (err) {
+      console.error("Failed to restore goals:", err);
+    }
+  };
+
+  // Auto-backup every hour
+  useEffect(() => {
+    const backupInterval = setInterval(backupGoals, 3600000); // 1 hour
+    return () => clearInterval(backupInterval);
   }, [goals, activeGoalId]);
 
   const handleCreateGoal = (goalData: FormGoalData) => {

@@ -6,7 +6,7 @@ import BudgetSummaryChart from "./BudgetSummaryChart";
 import { BudgetData } from "../types/types";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { db } from "../types/firebaseConfig";
-// import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth } from "../context/auth";
 import { usePlaidLink } from 'react-plaid-link';
 import axios from 'axios';
@@ -114,25 +114,39 @@ const BudgetBoard = () => {
   const [plaidLoading, setPlaidLoading] = useState(false);
   const isDashboardReady = currentBudget && accounts.length > 0 && transactions.length > 0;
   // const { fetchLinkToken, openPlaid, ready } = usePlaid();
+  // Add new state for backup
+  const [lastBackupTime, setLastBackupTime] = useState<string | null>(null);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({
+    Income: true,
+    Expenses: true,
+    Savings: true,
+  });
 
   
-  // 1. Load budgets from localStorage on mount (before Firestore)
+  // 1. Load budgets from localStorage on mount
   useEffect(() => {
+    console.log("Loading budgets from localStorage...");
     const storedBudgets = localStorage.getItem("budgets");
+    console.log("Stored budgets:", storedBudgets);
     if (storedBudgets) {
       try {
         const parsed = JSON.parse(storedBudgets);
+        console.log("Parsed budgets:", parsed);
         // Ensure each budget has a fallback ID if missing
         const fixed = parsed.map((b: any, index: number) => ({
           ...b,
           id: b.id || `local-${index}-${Date.now()}`
         }));
+        console.log("Fixed budgets:", fixed);
         setBudgets(fixed);
-        if (fixed.length > 0) {
+        // Only set current budget if none is selected
+        if (!currentBudget && fixed.length > 0) {
+          console.log("Setting current budget to:", fixed[0]);
           setCurrentBudget(fixed[0]);
         }
       } catch (e) {
-        console.error("Failed to parse stored budgets from localStorage:", e);
+        console.error("Failed to parse stored budgets:", e);
       }
     }
   }, []);
@@ -140,24 +154,36 @@ const BudgetBoard = () => {
 
   // 2. Save budgets to localStorage on every change
   useEffect(() => {
-    localStorage.setItem("budgets", JSON.stringify(budgets));
+    console.log("Saving budgets to localStorage:", budgets);
+    if (budgets.length > 0) {
+      localStorage.setItem("budgets", JSON.stringify(budgets));
+    }
   }, [budgets]);
 
-  // 3. Load bank accounts from localStorage on mount
+  // 3. Save current budget to localStorage when it changes
   useEffect(() => {
-    const storedAccounts = localStorage.getItem("bankAccounts");
+    console.log("Saving current budget to localStorage:", currentBudget);
+    if (currentBudget) {
+      localStorage.setItem("currentBudget", JSON.stringify(currentBudget));
+    }
+  }, [currentBudget]);
+
+  // 4. Keep Plaid data separate
+  useEffect(() => {
+    const storedAccounts = localStorage.getItem("plaidAccounts");
     if (storedAccounts) {
       try {
         setAccounts(JSON.parse(storedAccounts));
       } catch (e) {
-        console.error("Failed to parse stored bank accounts from localStorage:", e);
+        console.error("Failed to parse stored Plaid accounts:", e);
       }
     }
   }, []);
 
-  // 4. Save bank accounts to localStorage on every change
   useEffect(() => {
-    localStorage.setItem("bankAccounts", JSON.stringify(accounts));
+    if (accounts.length > 0) {
+      localStorage.setItem("plaidAccounts", JSON.stringify(accounts));
+    }
   }, [accounts]);
 
   // Add a localStorage event listener for real-time sync across tabs
@@ -166,14 +192,19 @@ const BudgetBoard = () => {
       const storedBudgets = localStorage.getItem("budgets");
       if (storedBudgets) {
         try {
-          setBudgets(JSON.parse(storedBudgets));
-        } catch {}
+          const parsed = JSON.parse(storedBudgets);
+          setBudgets(parsed);
+        } catch (e) {
+          console.error("Failed to parse stored budgets:", e);
+        }
       }
       const storedCurrent = localStorage.getItem("currentBudget");
       if (storedCurrent) {
         try {
           setCurrentBudget(JSON.parse(storedCurrent));
-        } catch {}
+        } catch (e) {
+          console.error("Failed to parse current budget:", e);
+        }
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -266,6 +297,7 @@ const BudgetBoard = () => {
   
 
     const handleFinishSetup = async (data: BudgetData, name: string) => {
+      console.log("Creating new budget with data:", data, "name:", name);
       const newBudget = {
         id: Date.now().toString(),
         name: name || `Budget ${budgets.length + 1}`,
@@ -276,13 +308,16 @@ const BudgetBoard = () => {
         },
         createdAt: new Date().toISOString(),
       };
+      console.log("New budget object:", newBudget);
 
       // Append new budget to existing budgets
       const updatedBudgets = [...budgets, newBudget];
+      console.log("Updated budgets array:", updatedBudgets);
       setBudgets(updatedBudgets);
       localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
 
       // Set as current budget
+      console.log("Setting current budget to:", newBudget);
       setCurrentBudget(newBudget);
       localStorage.setItem("currentBudget", JSON.stringify(newBudget));
       
@@ -294,6 +329,7 @@ const BudgetBoard = () => {
     type: "income" | "expenses" | "savings",
     items: { name: string; amount: string; spent?: string }[]
   ) => {
+    console.log("Updating budget:", type, items);
     if (!currentBudget) return;
     
     const updatedBudget = {
@@ -303,6 +339,7 @@ const BudgetBoard = () => {
         [type]: items,
       },
     };
+    console.log("Updated budget:", updatedBudget);
 
     // Update current budget
     setCurrentBudget(updatedBudget);
@@ -312,15 +349,14 @@ const BudgetBoard = () => {
     const updatedBudgets = budgets.map((b) => 
       b.id === currentBudget.id ? updatedBudget : b
     );
+    console.log("Updated budgets list:", updatedBudgets);
     setBudgets(updatedBudgets);
     localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
   };
 
-  const handleBudgetSelect = (budget: BudgetData) => {
-    const selectedBudget = budgets.find((b) => b.data === budget);
-    if (selectedBudget) {
-      setCurrentBudget(selectedBudget);
-    }
+  const handleBudgetSelect = (budget: Budget) => {
+    console.log("Selecting budget:", budget);
+    setCurrentBudget(budget);
   };
 
   const handleCreateNewBudget = () => {
@@ -580,6 +616,134 @@ const BudgetBoard = () => {
     }
     setShowDeleteConfirm(null);
   };
+
+  // Add backup functionality
+  const backupUserData = () => {
+    try {
+      const backupData = {
+        budgets,
+        currentBudget,
+        customCategories,
+        alerts,
+        preferences: {
+          dateRange,
+          categoryFilter,
+          selectedAccount,
+        },
+        lastBackup: new Date().toISOString(),
+      };
+
+      // Store in localStorage
+      localStorage.setItem("userDataBackup", JSON.stringify(backupData));
+      setLastBackupTime(new Date().toISOString());
+      setNotification({ message: "Data backed up successfully", type: "success" });
+    } catch (err) {
+      console.error("Failed to backup data:", err);
+      setNotification({ message: "Failed to backup data", type: "error" });
+    }
+  };
+
+  // Restore user data
+  const restoreUserData = () => {
+    try {
+      const stored = localStorage.getItem("userDataBackup");
+      if (stored) {
+        const backupData = JSON.parse(stored);
+        setBudgets(backupData.budgets || []);
+        setCurrentBudget(backupData.currentBudget || null);
+        setCustomCategories(backupData.customCategories || []);
+        setAlerts(backupData.alerts || []);
+        
+        if (backupData.preferences) {
+          setDateRange(backupData.preferences.dateRange || dateRange);
+          setCategoryFilter(backupData.preferences.categoryFilter || "all");
+          setSelectedAccount(backupData.preferences.selectedAccount || null);
+        }
+
+        setLastBackupTime(backupData.lastBackup);
+        setNotification({ message: "Data restored successfully", type: "success" });
+      }
+    } catch (err) {
+      console.error("Failed to restore data:", err);
+      setNotification({ message: "Failed to restore data", type: "error" });
+    }
+  };
+
+  // Auto-backup every hour
+  useEffect(() => {
+    const backupInterval = setInterval(() => {
+      backupUserData();
+    }, 3600000); // 1 hour
+
+    return () => clearInterval(backupInterval);
+  }, [budgets, currentBudget, customCategories, alerts]);
+
+  // Add backup button to the UI
+  const renderBackupControls = () => (
+    <Box sx={{ mt: 2, mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Button
+        variant="outlined"
+        onClick={backupUserData}
+        disabled={isBackingUp}
+        startIcon={isBackingUp ? <CircularProgress size={20} /> : null}
+      >
+        {isBackingUp ? "Backing up..." : "Backup Data"}
+      </Button>
+      <Button
+        variant="outlined"
+        onClick={restoreUserData}
+        disabled={isBackingUp}
+      >
+        Restore Data
+      </Button>
+      {lastBackupTime && (
+        <Typography variant="caption" color="text.secondary">
+          Last backup: {new Date(lastBackupTime).toLocaleString()}
+        </Typography>
+      )}
+    </Box>
+  );
+
+  // Add error handling for localStorage quota
+  const safeSetLocalStorage = (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      if (e instanceof Error && e.name === 'QuotaExceededError') {
+        setNotification({ 
+          message: "Storage limit reached. Please backup and clear some data.", 
+          type: "error" 
+        });
+      }
+    }
+  };
+
+  // Update all localStorage.setItem calls to use safeSetLocalStorage
+  useEffect(() => {
+    if (budgets.length > 0) {
+      safeSetLocalStorage("budgets", budgets);
+    }
+  }, [budgets]);
+
+  useEffect(() => {
+    if (currentBudget) {
+      safeSetLocalStorage("currentBudget", currentBudget);
+    }
+  }, [currentBudget]);
+
+  useEffect(() => {
+    if (accounts.length > 0) {
+      safeSetLocalStorage("plaidAccounts", accounts);
+    }
+  }, [accounts]);
+
+  const handleToggleGroup = (group: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [group]: !prev[group],
+    }));
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="xl" sx={{ mt: 8, mb: 8, position: "relative", px: { xs: 2, sm: 4, md: 6 } }}>
@@ -615,54 +779,19 @@ const BudgetBoard = () => {
     gap: 2,
   }}
 >
-  <Button
-    variant="contained"
-    onClick={() => {
-      setShowSetup(true);
-      setEditBudgetId(null);
-      setEditBudgetName("");
-    }}
-  >
-    Create a New Budget
-  </Button>
-
-  <Button
-    variant="outlined"
-    onClick={handleConnectBank}
-    disabled={plaidLoading}
-  >
-    {plaidLoading ? <CircularProgress size={20} /> : "Connect Bank Account"}
-  </Button>
+  {budgets.length === 0 && (
+    <Button
+      variant="contained"
+      onClick={() => {
+        setShowSetup(true);
+        setEditBudgetId(null);
+        setEditBudgetName("");
+      }}
+    >
+      Create a New Budget
+    </Button>
+  )}
 </Box>
-
-
-
-
-          {/* {!showSetup && (
-            <Button
-              variant="contained"
-              color="primary"
-              aria-label="Create a new budget"
-              size="small"
-              sx={{
-                px: 2,
-                py: 0.5,
-                fontSize: '0.85rem',
-                minWidth: 0,
-                width: 'fit-content',
-                borderRadius: 2,
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(25, 118, 210, 0.10)',
-              }}
-              onClick={() => {
-                setShowSetup(true);
-                setEditBudgetId(null);
-                setEditBudgetName("");
-              }}
-            >
-              Create a New Budget
-            </Button>
-          )} */}
 
           {showSetup && (
             <BudgetSetup
@@ -712,44 +841,72 @@ const BudgetBoard = () => {
                 maxHeight: "300px",
               }}
             />
-              {/* <Button
-                variant="contained"
-                color="primary"
-                onClick={handleConnectBank}
-                disabled={plaidLoading}
-                sx={{
-                  px: 3,
-                  py: 1.25,
-                  fontSize: { xs: "0.95rem", sm: "1rem" },
-                  fontWeight: 700,
-                  borderRadius: 2,
-                  boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
-                  background: "#fbc02d",
-                  color: "#fff",
-                  '&:hover': {
-                    background: "#e6ac00",
-                    color: "#fff",
-                    boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
-                  },
-                  '&:active': {
-                    boxShadow: "0 2px 8px rgba(25, 118, 210, 0.18)",
-                    background: "#c49000",
-                  },
-                }}
-              >
-                {plaidLoading ? (
-                  <CircularProgress size={22} sx={{ color: "white" }} />
-                ) : (
-                  "Connect Your Bank Account"
-                )}
-              </Button> */}
               </Box>
               )}
 
+          {/* Budget Section */}
+          {currentBudget && (
+            <Box sx={{ mt: 1, width: "100%" }}>
+              <Grid container spacing={4}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" gutterBottom>
+                    Budget Table
+                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <BudgetGroup
+                      title="Income"
+                      items={currentBudget.data.income.map(item => ({ ...item, activity: ('activity' in item ? (item as any).activity : "0") }))}
+                      onItemsChange={(items) => handleBudgetUpdate("income", items)}
+                      transactions={[]}
+                      expanded={!!expandedGroups["Income"]}
+                      onToggle={() => handleToggleGroup("Income")}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <BudgetGroup
+                      title="Expenses"
+                      items={currentBudget.data.expenses.map(item => ({ ...item, activity: ('activity' in item ? (item as any).activity : "0") }))}
+                      onItemsChange={(items) => handleBudgetUpdate("expenses", items)}
+                      transactions={[]}
+                      expanded={!!expandedGroups["Expenses"]}
+                      onToggle={() => handleToggleGroup("Expenses")}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <BudgetGroup
+                      title="Savings"
+                      items={currentBudget.data.savings.map(item => ({ ...item, activity: ('activity' in item ? (item as any).activity : "0") }))}
+                      onItemsChange={(items) => handleBudgetUpdate("savings", items)}
+                      transactions={[]}
+                      expanded={!!expandedGroups["Savings"]}
+                      onToggle={() => handleToggleGroup("Savings")}
+                    />
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={5}>
+                  <BudgetSummaryChart
+                    data={currentBudget.data}
+                    onBudgetSelect={handleBudgetSelect}
+                    currentBudgets={budgets}
+                    onCreateBudget={handleCreateNewBudget}
+                    onDeleteBudget={handleDeleteBudget}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )}
 
-
-          {/* Connected Accounts Section */}
-          <Box sx={{ mt: 4, mb: 4, width: '100%' }}>
+          {/* Connect Bank Account and Connected Accounts Section - moved here */}
+          <Box sx={{ mt: -5, mb: 2, width: '100%' }}>
+            <Button
+              variant="outlined"
+              onClick={handleConnectBank}
+              disabled={plaidLoading}
+              sx={{ mb: 2 }}
+            >
+              {plaidLoading ? <CircularProgress size={20} /> : "Connect Bank Account"}
+            </Button>
+            <br /><br />
             <Typography variant="h6" gutterBottom>
               Connected Bank Accounts
             </Typography>
@@ -779,7 +936,6 @@ const BudgetBoard = () => {
                           ? `Balance: $${account.balances.current.toFixed(2)}`
                           : "Balance: N/A"
                       }
-                      
                     />
                     {selectedAccount === account.account_id && (
                       <Chip label="Selected" color="primary" size="small" />
@@ -1006,56 +1162,6 @@ const BudgetBoard = () => {
             </Box>
           )}
 
-          {currentBudget && accounts.length > 0 && transactions.length > 0 && (
-            <Box
-              sx={{
-                border: "2px solid #e0e0e0",
-                borderRadius: 2,
-                padding: 3,
-                backgroundColor: "#fafafa",
-                width: "100%",
-              }}
-            >
-              <Grid container spacing={4} sx={{ mt: 4 }} alignItems="flex-start">
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" align="left" gutterBottom>
-                    Budget Table
-                  </Typography>
-                  <Box sx={{ width: "100%" }}>
-                    <BudgetGroup
-                      title="Income"
-                      items={currentBudget.data.income}
-                      onItemsChange={(items) => handleBudgetUpdate("income", items)}
-                      transactions={transactions}
-                    />
-                    <BudgetGroup
-                      title="Expenses"
-                      items={currentBudget.data.expenses}
-                      onItemsChange={(items) => handleBudgetUpdate("expenses", items)}
-                      transactions={transactions}
-                    />
-                    <BudgetGroup
-                      title="Savings"
-                      items={currentBudget.data.savings}
-                      onItemsChange={(items) => handleBudgetUpdate("savings", items)}
-                      transactions={transactions}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ width: "100%" }}>
-                    <BudgetSummaryChart
-                      data={currentBudget?.data || { income: [], expenses: [], savings: [] }}
-                      onBudgetSelect={handleBudgetSelect}
-                      currentBudgets={budgets.map(b => ({ name: b.name, data: b.data }))}
-                      onCreateBudget={handleCreateNewBudget}
-                    />
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
           {/* Custom Category Dialog */}
           <Dialog open={showCategoryDialog} onClose={() => setShowCategoryDialog(false)}>
             <DialogTitle>Add Custom Category</DialogTitle>
@@ -1145,65 +1251,30 @@ const BudgetBoard = () => {
               {notification?.message}
             </Alert>
           </Snackbar>
-          {/* Budget List */}
-          <List>
-            {budgets.map((budget, index) => (
-              <ListItem
-                button
-                key={budget.id}
-                onClick={() => handleBudgetSelect(budget.data)}
-                sx={{
-                  borderRadius: 1,
-                  mb: 1,
-                  backgroundColor: currentBudget?.data === budget.data ? "primary.light" : "transparent",
-                  "&:hover": { backgroundColor: "primary.light" },
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                {editBudgetId === budget.id ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <TextField
-                      value={editBudgetName}
-                      onChange={e => setEditBudgetName(e.target.value)}
-                      size="small"
-                      sx={{ flex: 1, mr: 1 }}
-                    />
-                    <Button onClick={handleEditBudgetSave} size="small" color="primary" sx={{ mr: 1 }}>Save</Button>
-                    <Button onClick={handleEditBudgetCancel} size="small">Cancel</Button>
-                  </Box>
-                ) : (
-                  <>
-                    <ListItemText
-                      primary={budget.name}
-                      primaryTypographyProps={{ fontWeight: currentBudget?.data === budget.data ? "bold" : "normal" }}
-                    />
-                    <Box>
-                      <IconButton onClick={e => { e.stopPropagation(); handleEditBudget(budget); }} size="small" sx={{ mr: 1 }}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton onClick={e => { e.stopPropagation(); setShowDeleteConfirm(budget.id!); }} size="small" color="error">
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </>
-                )}
-              </ListItem>
-            ))}
-          </List>
-          {showDeleteConfirm && (
-            <Dialog open onClose={() => setShowDeleteConfirm(null)}>
-              <DialogTitle>Delete Budget?</DialogTitle>
-              <DialogContent>
-                Are you sure you want to delete this budget? This action cannot be undone.
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setShowDeleteConfirm(null)}>Cancel</Button>
-                <Button onClick={() => handleDeleteBudget(showDeleteConfirm!)} color="error" variant="contained">Delete</Button>
-              </DialogActions>
-            </Dialog>
-          )}
+
+          {/* Backup Controls at the bottom */}
+          <Box sx={{ mt: 4, mb: 2, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+            <Button
+              variant="outlined"
+              onClick={backupUserData}
+              disabled={isBackingUp}
+              startIcon={isBackingUp ? <CircularProgress size={20} /> : null}
+            >
+              {isBackingUp ? "Backing up..." : "Backup Data"}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={restoreUserData}
+              disabled={isBackingUp}
+            >
+              Restore Data
+            </Button>
+            {lastBackupTime && (
+              <Typography variant="caption" color="text.secondary">
+                Last backup: {new Date(lastBackupTime).toLocaleString()}
+              </Typography>
+            )}
+          </Box>
         </Box>
       </Container>
     </ThemeProvider>
