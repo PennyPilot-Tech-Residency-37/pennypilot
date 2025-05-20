@@ -897,7 +897,7 @@ const BudgetBoard = () => {
           )}
 
           {/* Connect Bank Account and Connected Accounts Section - moved here */}
-          <Box sx={{ mt: -5, mb: 2, width: '100%' }}>
+          <Box sx={{ mt: 1, mb: 2, width: '100%' }}>
             <Button
               variant="outlined"
               onClick={handleConnectBank}
