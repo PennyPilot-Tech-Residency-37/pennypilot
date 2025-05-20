@@ -118,7 +118,7 @@ const renderPieLabel = ({
 };
 
 export default function TaxPrep() {
-  const { currentUser } = useAuth();
+  const { currentUser, getUserData, setUserData } = useAuth();
   const navigate = useNavigate();
 
   // Form state
@@ -131,15 +131,11 @@ export default function TaxPrep() {
   const [formData, setFormData] = useState(initialFormState);
   
   // App state
-  const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>(() => {
-    const stored = localStorage.getItem("deductibleExpenses");
-    if (!stored) return [];
-    try { return JSON.parse(stored); } catch (e) { return []; }
-  });
-  const [totalDeductibleSpent, setTotalDeductibleSpent] = useState<number>(0);
+  const [deductibleExpenses, setDeductibleExpenses] = useState<DeductibleExpense[]>([]);
+  const [totalDeductibleSpent, setTotalDeductibleSpent] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
   const [sortField, setSortField] = useState<SortField>('createdAt');
@@ -149,31 +145,41 @@ export default function TaxPrep() {
   // Predefined categories
   const predefinedCategories = ["Charitable Donations", "Business Expenses", "Medical Expenses", "Home Office Expenses", "Student Loan Interest", "Mortgage Interest", "Retirement Contributions", "Other"];
 
-  // Recalculate total whenever deductibleExpenses changes
+  // Load user-specific data
   useEffect(() => {
-    calculateTotal(deductibleExpenses);
-  }, [deductibleExpenses]);
+    const loadUserData = async () => {
+      if (!currentUser) {
+        console.log('No current user, clearing expenses');
+        setDeductibleExpenses([]);
+        setTotalDeductibleSpent(0);
+        return;
+      }
 
-  // Listen for changes to localStorage from other tabs
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const updated = localStorage.getItem("deductibleExpenses");
-      if (updated) {
-        try {
-          const parsed = JSON.parse(updated);
-          setDeductibleExpenses(parsed);
-          console.log("[TaxPrep] deductibleExpenses updated from localStorage event:", parsed);
-        } catch {}
+      console.log('Loading tax prep data for user:', currentUser.uid);
+      const expenses = await getUserData('taxPrep', 'deductibleExpenses') || [];
+      console.log('Loaded expenses for user', currentUser.uid, ':', expenses);
+        if (Array.isArray(expenses)) {
+          setDeductibleExpenses(expenses);
+          const total = expenses.reduce((sum: number, expense: DeductibleExpense) => sum + expense.deductibleAmount, 0);
+          setTotalDeductibleSpent(total);
+        console.log('Set total deductible amount for user', currentUser.uid, ':', total);
+      } else {
+        console.log('No valid expenses array found for user', currentUser.uid);
       }
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
-  const calculateTotal = (expenses: DeductibleExpense[]) => {
-    const total = expenses.reduce((sum, expense) => sum + Number(expense.deductibleAmount), 0);
-    setTotalDeductibleSpent(total);
-  };
+    loadUserData();
+  }, [currentUser, getUserData]);
+
+  // Clear data when component unmounts
+  useEffect(() => {
+    return () => {
+      if (currentUser) {
+        console.log('Component unmounting, saving data for user:', currentUser.uid);
+        setUserData('taxPrep', 'deductibleExpenses', deductibleExpenses);
+      }
+    };
+  }, [currentUser, deductibleExpenses, setUserData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
     const { name, value } = e.target;
@@ -188,9 +194,16 @@ export default function TaxPrep() {
     setEditingId(null);
   };
 
+  // Update handleSave to use local storage
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (!currentUser) {
+      setError("You must be logged in to save expenses.");
+      setIsLoading(false);
+      return;
+    }
 
     const amount = Number(formData.deductibleAmount);
     if (!amount || amount <= 0) {
@@ -220,16 +233,17 @@ export default function TaxPrep() {
       if (editingId) {
         updatedExpenses = deductibleExpenses.map(e => e.id === editingId ? expenseData : e);
         setEditingId(null);
-        console.log("[TaxPrep] Edited expense:", expenseData);
       } else {
         updatedExpenses = [...deductibleExpenses, expenseData];
-        console.log("[TaxPrep] Added new expense:", expenseData);
       }
+      console.log('Saving expenses for user:', currentUser.uid);
+      console.log('Updated expenses to save:', updatedExpenses);
       setDeductibleExpenses(updatedExpenses);
-      localStorage.setItem("deductibleExpenses", JSON.stringify(updatedExpenses));
+      await setUserData('taxPrep', 'deductibleExpenses', updatedExpenses);
       setFormData(initialFormState);
       setSuccess(editingId ? "Expense updated successfully!" : "Expense added successfully!");
     } catch (err) {
+      console.error('Error saving expense:', err);
       setFormData({
         deductibleAmount: amount.toString(),
         category: formData.category,
@@ -252,12 +266,19 @@ export default function TaxPrep() {
     });
   };
 
-  const handleDelete = (id: string) => {
-    const updatedExpenses = deductibleExpenses.filter(e => e.id !== id);
-    setDeductibleExpenses(updatedExpenses);
-    localStorage.setItem("deductibleExpenses", JSON.stringify(updatedExpenses));
-    console.log("[TaxPrep] Deleted expense with id:", id);
-    setSuccess("Expense deleted successfully!");
+  // Update handleDelete to use local storage
+  const handleDelete = async (id: string) => {
+    try {
+      console.log('Deleting expense', id, 'for user:', currentUser?.uid);
+      const updatedExpenses = deductibleExpenses.filter(e => e.id !== id);
+      console.log('Updated expenses after delete:', updatedExpenses);
+      setDeductibleExpenses(updatedExpenses);
+      await setUserData('taxPrep', 'deductibleExpenses', updatedExpenses);
+      setSuccess("Expense deleted successfully!");
+    } catch (err) {
+      console.error('Error deleting expense:', err);
+      setError("Failed to delete expense. Please try again.");
+    }
   };
 
   const handleExport = () => {
@@ -350,6 +371,44 @@ export default function TaxPrep() {
     0
   );
 
+  // Update backup functionality to use local storage
+  const backupExpenses = async () => {
+    try {
+      const backupData = {
+        deductibleExpenses,
+        totalDeductibleSpent,
+        lastBackup: new Date().toISOString(),
+      };
+      await setUserData('taxPrep', 'expensesBackup', backupData);
+    } catch (err) {
+      console.error("Failed to backup expenses:", err);
+      setError("Failed to backup expenses");
+    }
+  };
+
+  // Update restore functionality to use local storage
+  const restoreExpenses = async () => {
+    try {
+      const backupData = await getUserData('taxPrep', 'expensesBackup');
+      if (backupData && typeof backupData === 'object') {
+        if (Array.isArray(backupData.deductibleExpenses)) {
+          setDeductibleExpenses(backupData.deductibleExpenses);
+        }
+        if (typeof backupData.totalDeductibleSpent === 'number') {
+          setTotalDeductibleSpent(backupData.totalDeductibleSpent);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to restore expenses:", err);
+      setError('Failed to restore expenses');
+    }
+  };
+
+  // Auto-backup every hour
+  useEffect(() => {
+    const backupInterval = setInterval(backupExpenses, 3600000); // 1 hour
+    return () => clearInterval(backupInterval);
+  }, [deductibleExpenses, totalDeductibleSpent]);
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
@@ -533,9 +592,9 @@ export default function TaxPrep() {
                   </Typography>
                   <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: 'success.main' }}>
                     Total Tax Deductions: ${totalDeductibleSpent.toFixed(2)}
-                  </Typography>
-                  <Button
-                    variant="contained"
+          </Typography>
+          <Button
+            variant="contained"
                     startIcon={<FileDownloadIcon />}
                     onClick={handleExport}
                     disabled={!deductibleExpenses.length}
@@ -553,7 +612,7 @@ export default function TaxPrep() {
                     }}
                   >
                     Export CSV
-                  </Button>
+          </Button>
                 </Card>
               </Grid>
               <Grid item xs={12} md={6}>
@@ -617,7 +676,7 @@ export default function TaxPrep() {
                         />
                       </PieChart>
                     </ResponsiveContainer>
-                  </Box>
+        </Box>
                 </Card>
               </Grid>
             </Grid>
@@ -639,7 +698,7 @@ export default function TaxPrep() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">
                   Logged Expenses
-                </Typography>
+          </Typography>
                 <FormControl sx={{ minWidth: 200 }}>
                   <InputLabel>Filter by Category</InputLabel>
                   <Select
@@ -659,9 +718,9 @@ export default function TaxPrep() {
                   <LoadingSpinner />
                 </Box>
               ) : getFilteredAndSortedExpenses().length > 0 ? (
-                <Table>
-                  <TableHead>
-                    <TableRow>
+            <Table>
+              <TableHead>
+                <TableRow>
                       <TableCell>
                         <TableSortLabel
                           active={sortField === 'deductibleAmount'}
@@ -691,17 +750,17 @@ export default function TaxPrep() {
                         </TableSortLabel>
                       </TableCell>
                       <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                     {getFilteredAndSortedExpenses().map((expense) => (
-                      <TableRow key={expense.id}>
+                  <TableRow key={expense.id}>
                         <TableCell>${Number(expense.deductibleAmount).toFixed(2)}</TableCell>
-                        <TableCell>{expense.category}</TableCell>
+                    <TableCell>{expense.category}</TableCell>
                         <TableCell>{expense.notes}</TableCell>
                         <TableCell>{new Date(expense.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <IconButton 
+                      <IconButton
                             onClick={() => handleEdit(expense)} 
                             color="primary"
                             sx={{
@@ -710,26 +769,26 @@ export default function TaxPrep() {
                                 transform: 'scale(0.9)',
                               },
                             }}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton 
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
                             onClick={() => handleDelete(expense.id!)} 
-                            color="error"
+                        color="error"
                             sx={{
                               transition: 'all 0.2s ease-in-out',
                               '&:active': {
                                 transform: 'scale(0.9)',
                               },
                             }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
               ) : (
                 <Typography color="textSecondary" sx={{ p: 2, textAlign: 'center' }}>
                   {categoryFilter !== 'all' 
@@ -757,6 +816,6 @@ export default function TaxPrep() {
         />
       </Box>
       <Box sx={{ height: "200px" }} />
-    </Container>
+      </Container>
   );
 }

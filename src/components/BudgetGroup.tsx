@@ -14,16 +14,13 @@ import {
   Paper,
   IconButton,
   Button,
-  LinearProgress,
   Box,
-  Tooltip,
   ThemeProvider,
   createTheme,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import {
   DndContext,
   closestCenter,
@@ -42,7 +39,7 @@ import axios from "axios";
 import "./Budget.css";
 
 const theme = createTheme({
-  spacing: 8,
+  spacing: 0,
   typography: {
     h6: { fontWeight: 600 },
   },
@@ -55,14 +52,17 @@ const theme = createTheme({
 
 interface BudgetItem {
   name: string;
-  amount: string; // Expected (Income), Budgeted (Expenses), Target (Savings)
+  amount: string; // Budgeted amount
+  activity: string; // Activity (now editable)
 }
 
 interface BudgetGroupProps {
   title: "Income" | "Expenses" | "Savings";
   items: BudgetItem[];
   onItemsChange?: (items: BudgetItem[]) => void;
-  transactions: any[]; // Plaid transactions
+  transactions: any[];
+  expanded: boolean;
+  onToggle: () => void;
 }
 
 const SortableItem = ({
@@ -70,14 +70,12 @@ const SortableItem = ({
   index,
   title,
   onItemChange,
-  onDelete,
   transactions,
 }: {
   item: BudgetItem;
   index: number;
   title: "Income" | "Expenses" | "Savings";
   onItemChange: (index: number, key: string, value: string) => void;
-  onDelete: (index: number) => void;
   transactions: any[];
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -90,92 +88,88 @@ const SortableItem = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  // Calculate actual amount (Received, Spent, Saved)
-  const calculateActual = () => {
-    const filterCategory = title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings";
-    return transactions
-      .filter((t) => t.category === filterCategory && (t.description ?? "").toLowerCase().includes((item.name ?? "").toLowerCase()))
-      .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
-      .toFixed(2);
-  };
-
-  const actual = calculateActual();
-  const planned = parseFloat(item.amount) || 0;
-  const difference = (planned - parseFloat(actual)).toFixed(2);
-  const progress = (parseFloat(actual) / planned) * 100 || 0;
+  const actual = parseFloat(item.activity) || 0;
+  const budgeted = parseFloat(item.amount) || 0;
+  const available = budgeted + actual;
+  const progress = budgeted > 0 ? Math.min((Math.abs(actual) / budgeted) * 100, 100) : 0;
 
   return (
-    <TableRow ref={setNodeRef} style={style} sx={{ "&:hover": { bgcolor: "action.hover" } }}>
+    <TableRow ref={setNodeRef} style={style} sx={{ "&:hover": { bgcolor: "action.hover" }, height: "18px" }}>
+      <TableCell sx={{ width: 24, padding: "0", borderBottom: "none" }}>
+        <IconButton
+          {...listeners}
+          sx={{ cursor: "grab", "&:hover": { color: "primary.main" }, padding: "2px" }}
+          aria-label="Drag to reorder"
+        >
+          <DragIndicatorIcon sx={{ fontSize: "12px" }} />
+        </IconButton>
+      </TableCell>
       <TableCell colSpan={4} sx={{ padding: 0, borderBottom: "none" }}>
-        <Box sx={{ display: "flex", flexDirection: "column" }}>
-          {/* First Line */}
-          <Box sx={{ display: "flex", alignItems: "center", padding: 1 }}>
-            <TableCell sx={{ width: 40, padding: 0.5, borderBottom: "none" }}>
-              <IconButton
-                {...listeners}
-                sx={{ cursor: "grab", "&:hover": { color: "primary.main" }, padding: 0.5 }}
-                aria-label="Drag to reorder"
-              >
-                <DragIndicatorIcon fontSize="small" />
-              </IconButton>
-            </TableCell>
-            <TableCell sx={{ width: "35%", padding: 0.5, borderBottom: "none" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", height: "18px" }}>
+          {/* Main Row: 14px (total height - 4px progress bar) */}
+          <Box sx={{ display: "flex", alignItems: "center", padding: "0 4px", height: "14px" }}>
+            <TableCell sx={{ width: "35%", padding: "0", borderBottom: "none" }}>
               <TextField
                 fullWidth
                 value={item.name}
-                variant="outlined"
+                variant="standard"
                 onChange={(e) => onItemChange(index, "name", e.target.value)}
                 size="small"
-                inputProps={{ style: { fontSize: "0.875rem" } }}
-                sx={{ "& .MuiOutlinedInput-root": { height: 32 } }}
+                inputProps={{ style: { fontSize: "0.6875rem", padding: "0", lineHeight: "14px" } }}
+                sx={{ "& .MuiInput-root": { padding: 0, height: "14px" } }}
                 aria-label={`${title} name`}
               />
             </TableCell>
-            <TableCell align="right" sx={{ width: "25%", padding: 0.5, borderBottom: "none" }}>
+            <TableCell align="right" sx={{ width: "20%", padding: "0", borderBottom: "none" }}>
               <TextField
                 fullWidth
                 type="number"
                 value={item.amount}
-                variant="outlined"
+                variant="standard"
                 onChange={(e) => onItemChange(index, "amount", e.target.value)}
                 size="small"
-                inputProps={{ style: { fontSize: "0.875rem" } }}
-                sx={{ "& .MuiOutlinedInput-root": { height: 32 } }}
-                aria-label={`${title === "Income" ? "Expected" : title === "Expenses" ? "Budgeted" : "Target"} amount`}
+                inputProps={{ style: { fontSize: "0.6875rem", textAlign: "right", padding: "0", lineHeight: "14px" } }}
+                sx={{ "& .MuiInput-root": { padding: 0, height: "14px" } }}
+                aria-label={`Budgeted amount`}
               />
             </TableCell>
-            <TableCell align="right" sx={{ width: "20%", padding: 0.5, borderBottom: "none", fontSize: "0.875rem" }}>
-              {`$${actual}`}
+            <TableCell align="right" sx={{ width: "20%", padding: "0", borderBottom: "none" }}>
+              <TextField
+                fullWidth
+                type="number"
+                value={item.activity}
+                variant="standard"
+                onChange={(e) => onItemChange(index, "activity", e.target.value)}
+                size="small"
+                inputProps={{ style: { fontSize: "0.6875rem", textAlign: "right", padding: "0", lineHeight: "14px" } }}
+                sx={{ "& .MuiInput-root": { padding: 0, height: "14px" } }}
+                aria-label={`Activity amount`}
+              />
+            </TableCell>
+            <TableCell align="right" sx={{ width: "25%", padding: "0", borderBottom: "none" }}>
+              <Typography
+                sx={{
+                  color: available < 0 ? "error.main" : available > 0 ? "success.main" : "text.primary",
+                  fontWeight: 500,
+                  fontSize: "0.625rem",
+                  lineHeight: "14px",
+                }}
+              >
+                {`$${available.toFixed(2)}`}
+              </Typography>
             </TableCell>
           </Box>
-          {/* Second Line */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 8px", bgcolor: "#f5f5f5" }}>
-            <Box sx={{ width: "40%", display: "flex", alignItems: "center" }}>
-              <Typography
-                sx={{ fontSize: "0.875rem", color: parseFloat(difference) < 0 ? "error.main" : "success.main" }}
-              >
-                Difference: ${difference}
-              </Typography>
-            </Box>
-            <Box sx={{ width: "50%", display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontSize: "0.75rem" }}>{`${Math.round(progress)}%`}</Typography>
-              <LinearProgress
-                variant="determinate"
-                value={Math.min(progress, 100)}
-                color={progress > 100 ? "error" : "primary"}
-                sx={{ width: 120, height: 4 }}
-              />
-            </Box>
-            <Box sx={{ width: "10%", display: "flex", justifyContent: "flex-end" }}>
-              <IconButton
-                onClick={() => onDelete(index)}
-                aria-label={`Delete ${item.name}`}
-                size="small"
-                sx={{ padding: 0.5 }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
+          {/* Progress Bar: 4px */}
+          <Box sx={{ padding: "0 4px", height: "4px", bgcolor: "#f5f5f5" }}>
+            <Box
+              sx={{
+                width: `${progress}%`,
+                height: "100%",
+                bgcolor: progress > 100 ? "error.main" : "primary.main",
+                borderRadius: "2px",
+                transition: "width 0.3s ease-in-out",
+              }}
+            />
           </Box>
         </Box>
       </TableCell>
@@ -183,12 +177,22 @@ const SortableItem = ({
   );
 };
 
-const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupProps) => {
-  const [groupItems, setGroupItems] = useState<BudgetItem[]>(items);
+const BudgetGroup = ({ title, items, onItemsChange, transactions, expanded, onToggle }: BudgetGroupProps) => {
+  const [groupItems, setGroupItems] = useState<BudgetItem[]>(
+    items.map((item) => ({
+      ...item,
+      activity: item.activity || "0",
+    }))
+  );
   const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
-    setGroupItems(items);
+    setGroupItems(
+      items.map((item) => ({
+        ...item,
+        activity: item.activity || "0",
+      }))
+    );
   }, [items]);
 
   const handleDragEnd = (event: any) => {
@@ -208,33 +212,16 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
     setGroupItems(updated);
     onItemsChange?.(updated);
 
-    // Sync to Notion
     try {
       await axios.post("/api/notion/sync", {
-        user_id: "current_user_id", // Replace with actual user ID
+        user_id: "current_user_id",
         page_type: "budget",
         group: title.toLowerCase(),
         data: updated.map((item) => ({
           name: item.name,
           amount: parseFloat(item.amount) || 0,
-          actual: parseFloat(
-            transactions
-              .filter((t) =>
-                t.category === (title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings") &&
-              (t.description ?? "").toLowerCase().includes(item.name.toLowerCase())
-              )
-              .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
-              .toFixed(2)
-          ),
-          difference: (parseFloat(item.amount) || 0) - parseFloat(
-            transactions
-              .filter((t) =>
-                t.category === (title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings") &&
-              (t.description ?? "").toLowerCase().includes(item.name.toLowerCase())
-              )
-              .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
-              .toFixed(2)
-          ),
+          activity: parseFloat(item.activity) || 0,
+          available: (parseFloat(item.amount) || 0) + (parseFloat(item.activity) || 0),
         })),
       });
     } catch (err) {
@@ -242,91 +229,60 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
     }
   };
 
-  const handleDelete = (index: number) => {
-    const updated = groupItems.filter((_, i) => i !== index);
-    setGroupItems(updated);
-    onItemsChange?.(updated);
-  };
-
   const handleAddLine = () => {
-    const updated = [...groupItems, { name: "", amount: "" }];
+    const updated = [...groupItems, { name: "", amount: "", activity: "0" }];
     setGroupItems(updated);
     onItemsChange?.(updated);
   };
 
-  const sum = (arr: { amount: string }[]) =>
-    arr.reduce((acc, val) => acc + (parseFloat(val.amount) || 0), 0);
+  const sumBudgeted = () =>
+    groupItems.reduce((acc, val) => acc + (parseFloat(val.amount) || 0), 0);
   const sumActual = () =>
-    groupItems.reduce((acc, item) => {
-      return (
-        acc +
-        parseFloat(
-          transactions
-            .filter((t) =>
-              t.category === (title === "Income" ? "Income" : title === "Expenses" ? "Expense" : "Savings") &&
-            (t.description ?? "").toLowerCase().includes((item.name ?? "").toLowerCase())
-            )
-            .reduce((sum, t) => sum + (title === "Income" ? t.amount : Math.abs(t.amount)), 0)
-            .toFixed(2)
-        )
-      );
-    }, 0);
+    groupItems.reduce((acc, item) => acc + (parseFloat(item.activity) || 0), 0);
+  const sumAvailable = () => sumBudgeted() + sumActual();
 
-  // Column headers based on group type
-  const headers = {
-    Income: ["", "Source", "Expected", "Received"],
-    Expenses: ["", "Category", "Budgeted", "Spent"],
-    Savings: ["", "Goal", "Target", "Saved"],
-  };
+  const headers = ["", "Category", "Budgeted", "Activity", "Available"];
 
   return (
     <ThemeProvider theme={theme}>
       <Accordion
-        defaultExpanded
+        expanded={expanded}
+        onChange={onToggle}
         sx={{
           borderBottom: "1px solid #e0e0e0",
-          borderRadius: 2,
+          borderRadius: 0,
           boxShadow: "none",
           "&:before": { display: "none" },
-          "&.Mui-expanded": { margin: "16px 0" },
+          "&.Mui-expanded": { margin: 0 },
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
+          expandIcon={<ExpandMoreIcon sx={{ fontSize: "18px" }} />}
           sx={{
-            borderRadius: 2,
-            "&.Mui-expanded": { minHeight: 48 },
+            bgcolor: "#f5f5f5",
+            minHeight: "26px !important",
+            padding: "0 8px",
+            margin: 0,
+            "&.Mui-expanded": { minHeight: "26px !important" },
+            "& .MuiAccordionSummary-content": { margin: 0 }
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main" }}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary", fontSize: "0.875rem", lineHeight: "26px" }}>
             {title}
           </Typography>
         </AccordionSummary>
-        <AccordionDetails sx={{ p: 3 }}>
-          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, overflowX: "hidden" }}>
+        <AccordionDetails sx={{ p: 0 }}>
+          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 0 }}>
             <Table aria-label={`${title} budget table`}>
               <TableHead>
-                <TableRow>
-                  {headers[title].map((header) => (
+                <TableRow sx={{ height: "16px" }}>
+                  {headers.map((header) => (
                     <TableCell
                       key={header}
-                      align={header === "" ? "center" : header === "Source" || header === "Category" || header === "Goal" ? "left" : "right"}
-                      sx={{ fontWeight: "bold", color: "primary.main", fontSize: "0.875rem", padding: 1 }}
+                      align={header === "" ? "center" : header === "Category" ? "left" : "right"}
+                      sx={{ fontWeight: "bold", color: "text.secondary", fontSize: "0.625rem", padding: "0 4px", lineHeight: "16px" }}
                     >
-                      <Tooltip
-                        title={
-                          header === "Expected" ? "The amount you plan to receive." :
-                          header === "Budgeted" ? "The amount you've planned to spend." :
-                          header === "Target" ? "The amount you aim to save." :
-                          header === "Received" ? "Actual income received." :
-                          header === "Spent" ? "What you've spent so far." :
-                          header === "Saved" ? "Amount contributed to savings." :
-                          ""
-                        }
-                        componentsProps={{ tooltip: { sx: { whiteSpace: "normal", maxWidth: 200 } } }}
-                      >
-                        <span>{header}</span>
-                      </Tooltip>
+                      {header}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -344,7 +300,6 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
                         index={index}
                         title={title}
                         onItemChange={handleItemChange}
-                        onDelete={handleDelete}
                         transactions={transactions}
                       />
                     ))}
@@ -354,52 +309,55 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
             </Table>
           </TableContainer>
 
-          <Box mt={3}>
+          <Box sx={{ borderTop: "1px solid #e0e0e0", p: "0 4px" }}>
+            <Table>
+              <TableBody>
+                <TableRow sx={{ height: "18px" }}>
+                  <TableCell sx={{ width: 24, padding: "0" }} />
+                  <TableCell sx={{ padding: "0 4px" }}>
+                    <Typography fontWeight="bold" sx={{ fontSize: "0.6875rem", lineHeight: "18px" }}>
+                      Total {title}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right" sx={{ padding: "0 4px" }}>
+                    <Typography fontWeight="bold" sx={{ fontSize: "0.6875rem", lineHeight: "18px" }}>
+                      {`$${sumBudgeted().toFixed(2)}`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right" sx={{ padding: "0 4px" }}>
+                    <Typography fontWeight="bold" sx={{ fontSize: "0.6875rem", lineHeight: "18px" }}>
+                      {`$${sumActual().toFixed(2)}`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right" sx={{ padding: "0 4px" }}>
+                    <Typography
+                      fontWeight="bold"
+                      sx={{
+                        fontSize: "0.625rem",
+                        color: sumAvailable() < 0 ? "error.main" : "success.main",
+                        lineHeight: "18px",
+                      }}
+                    >
+                      {`$${sumAvailable().toFixed(2)}`}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </Box>
+
+          <Box p="2px 4px">
             <Button
               fullWidth
-              variant="contained"
+              variant="text"
               color="primary"
-              startIcon={<AddIcon />}
+              startIcon={<AddIcon sx={{ fontSize: "12px" }} />}
               onClick={handleAddLine}
-              sx={{ textTransform: "none", borderRadius: 2, padding: "8px 16px" }}
+              sx={{ textTransform: "none", justifyContent: "flex-start", fontSize: "0.6875rem", padding: "0 4px", height: "18px", lineHeight: "18px" }}
               aria-label={`Add a new ${title.toLowerCase()} line`}
             >
               Add a new line
             </Button>
-          </Box>
-
-          {/* Totals Row */}
-          <Box mt={2} sx={{ borderTop: "1px solid #e0e0e0", pt: 2, borderRadius: 2 }}>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ width: 40, padding: 0.5 }} />
-                  <TableCell sx={{ padding: 0.5 }}>
-                    <Typography fontWeight="bold" sx={{ fontSize: "0.875rem" }}>
-                      Total
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right" sx={{ padding: 0.5 }}>
-                    <Typography fontWeight="bold" sx={{ fontSize: "0.875rem" }}>
-                      {`$${sum(groupItems).toFixed(2)}`}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right" sx={{ padding: 0.5 }}>
-                    <Typography fontWeight="bold" sx={{ fontSize: "0.875rem" }}>
-                      {`$${sumActual().toFixed(2)}`}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ padding: 0.5, borderBottom: "none" }} />
-                  <TableCell sx={{ padding: 0.5, borderBottom: "none" }} />
-                  <TableCell align="right" sx={{ padding: 0.5, borderBottom: "none", fontSize: "0.875rem", color: (sum(groupItems) - sumActual()) < 0 ? "error.main" : "success.main" }}>
-                    Difference: ${(sum(groupItems) - sumActual()).toFixed(2)}
-                  </TableCell>
-                  <TableCell sx={{ padding: 0.5, borderBottom: "none" }} />
-                </TableRow>
-              </TableBody>
-            </Table>
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -407,4 +365,4 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions }: BudgetGroupP
   );
 };
 
-export default React.memo(BudgetGroup);
+export default BudgetGroup;

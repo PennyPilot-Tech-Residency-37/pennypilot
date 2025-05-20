@@ -5,10 +5,18 @@ export interface BudgetItem {
   }
   
   export interface BudgetData {
-    income: BudgetItem[];
-    expenses: BudgetItem[];
-    savings: BudgetItem[];
+    income: { name: string; amount: string }[];
+    expenses: { name: string; amount: string }[];
+    savings: { name: string; amount: string }[];
   }
+
+export interface Budget {
+  id?: string;
+  name: string;
+  data: BudgetData;
+  createdAt?: string;
+}
+
 // goal types
 type Goal = {
   id: number;

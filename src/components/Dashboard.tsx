@@ -254,29 +254,63 @@ export default function Dashboard() {
     };
   }, [planeControls]);
 
-  // Sync with localStorage for budgets, deductible expenses, and currentBudget
+  // Sync with localStorage for budgets and currentBudget
   useEffect(() => {
     const syncFromStorage = () => {
       // Budgets
       const storedBudgets = localStorage.getItem("budgets");
       if (storedBudgets) {
-        try { setBudgets(JSON.parse(storedBudgets)); } catch {}
-      }
-      // Deductible Expenses
-      const storedExpenses = localStorage.getItem("deductibleExpenses");
-      if (storedExpenses) {
-        try { setDeductibleExpenses(JSON.parse(storedExpenses)); } catch {}
+        try { 
+          const parsed = JSON.parse(storedBudgets);
+          setBudgets(parsed);
+          // If no budget is selected, select the first one
+          if (!selectedBudget && parsed.length > 0) {
+            setSelectedBudget(parsed[0]);
+          }
+        } catch (e) {
+          console.error("Failed to parse stored budgets:", e);
+        }
       }
       // Current Budget
       const storedCurrent = localStorage.getItem("currentBudget");
       if (storedCurrent) {
-        try { setSelectedBudget(JSON.parse(storedCurrent)); } catch {}
+        try { 
+          const parsed = JSON.parse(storedCurrent);
+          setSelectedBudget(parsed);
+        } catch (e) {
+          console.error("Failed to parse current budget:", e);
+        }
       }
     };
     window.addEventListener('storage', syncFromStorage);
     syncFromStorage();
     return () => window.removeEventListener('storage', syncFromStorage);
+  }, [selectedBudget]);
+
+  // Save selected budget to localStorage when it changes
+  useEffect(() => {
+    if (selectedBudget) {
+      localStorage.setItem("currentBudget", JSON.stringify(selectedBudget));
+    }
+  }, [selectedBudget]);
+
+  // Keep Plaid data separate
+  useEffect(() => {
+    const storedAccounts = localStorage.getItem("plaidAccounts");
+    if (storedAccounts) {
+      try {
+        setPlaidAccounts(JSON.parse(storedAccounts));
+      } catch (e) {
+        console.error("Failed to parse stored Plaid accounts:", e);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    if (plaidAccounts.length > 0) {
+      localStorage.setItem("plaidAccounts", JSON.stringify(plaidAccounts));
+    }
+  }, [plaidAccounts]);
 
   // Update total deductible spent when expenses change
   useEffect(() => {
@@ -299,6 +333,7 @@ export default function Dashboard() {
         if (accountsRes.data && accountsRes.data.length > 0) {
           setPlaidAccounts(accountsRes.data);
           localStorage.setItem("plaidAccounts", JSON.stringify(accountsRes.data));
+          setPlaidError(null); // Clear any existing error
         }
 
         // 2. Fetch transactions
@@ -310,7 +345,11 @@ export default function Dashboard() {
 
         setPlaidLoading(false);
       } catch (err) {
-        setPlaidError("Could not fetch live bank data. Showing cached data if available.");
+        // Only show error if we don't have any cached data
+        const cachedAccounts = localStorage.getItem("plaidAccounts");
+        if (!cachedAccounts) {
+          setPlaidError("Could not fetch live bank data. Showing cached data if available.");
+        }
         setPlaidLoading(false);
       }
     };
@@ -324,7 +363,7 @@ export default function Dashboard() {
   }, [currentUser]);
 
   // Example analytics: total balance and recent spending
-  const totalBalance = plaidAccounts.reduce((sum, acct) => sum + (acct.balance || 0), 0);
+  const totalBalance = plaidAccounts.reduce((sum, acct) => sum + (acct.balances?.current || 0), 0);
   const recentSpending = plaidTransactions
     .filter(txn => txn.amount < 0)
     .slice(0, 5)
@@ -444,23 +483,6 @@ export default function Dashboard() {
     { name: "Target", value: selectedGoal.amount }
   ] : [];
   
-  // Load Plaid accounts from localStorage on mount
-  useEffect(() => {
-    const storedAccounts = localStorage.getItem("plaidAccounts");
-    if (storedAccounts) {
-      try {
-        setPlaidAccounts(JSON.parse(storedAccounts));
-      } catch (e) {
-        console.error("Failed to parse stored Plaid accounts from localStorage:", e);
-      }
-    }
-  }, []);
-
-  // Save Plaid accounts to localStorage on every change
-  useEffect(() => {
-    localStorage.setItem("plaidAccounts", JSON.stringify(plaidAccounts));
-  }, [plaidAccounts]);
-
   // Plaid Link hook
   const { open: plaidLinkOpen, ready: plaidLinkReady } = usePlaidLink({
     token: linkToken || '',
@@ -647,22 +669,26 @@ export default function Dashboard() {
                                 wrapperStyle={{ paddingBottom: 20 }}
                               />
                               <Pie
-                                data={budgetChartData}
+                                data={[
+                                  { name: "Income", value: sum(selectedBudget.data.income) },
+                                  { name: "Expenses", value: sum(selectedBudget.data.expenses) },
+                                  { name: "Savings", value: sum(selectedBudget.data.savings) }
+                                ]}
                                 dataKey="value"
                                 nameKey="name"
                                 cx="50%"
-                                cy="55%"
+                                cy="50%"
                                 outerRadius={80}
-                                label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
                                 labelLine={false}
                               >
-                                {budgetChartData.map((entry, index) => (
-                                  <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={BUDGET_COLORS[index % BUDGET_COLORS.length]}
-                                  />
+                                {BUDGET_COLORS.map((color, index) => (
+                                  <Cell key={`cell-${index}`} fill={color} />
                                 ))}
                               </Pie>
+                              <Tooltip 
+                                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                              />
                             </PieChart>
                           </ResponsiveContainer>
                         </>
@@ -1019,27 +1045,33 @@ export default function Dashboard() {
               <ListItem key={acct.id}>
                 <ListItemText
                   primary={acct.name}
-                  secondary={`Balance: $${acct.balance?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "N/A"}`}
+                  secondary={`Balance: $${acct.balances?.current?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "N/A"}`}
                 />
               </ListItem>
             ))}
           </List>
           <Typography variant="subtitle1" sx={{ mt: 2 }}>
-            Total Balance: ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            Total Balance: ${plaidAccounts.reduce((sum, acct) => sum + (acct.balances?.current || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </Typography>
           <Typography variant="h6" sx={{ mt: 3 }}>
             Recent Spending
           </Typography>
-          <List>
-            {recentSpending.map((txn: any) => (
-              <ListItem key={txn.id}>
-                <ListItemText
-                  primary={`${txn.date}: ${txn.description}`}
-                  secondary={`-$${txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                />
-              </ListItem>
-            ))}
-          </List>
+          {plaidTransactions.length > 0 ? (
+            <List>
+              {recentSpending.map((txn: any) => (
+                <ListItem key={txn.id}>
+                  <ListItemText
+                    primary={`${txn.date}: ${txn.description}`}
+                    secondary={`-$${txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'left', pl: 1 }}>
+              No recent transactions available
+            </Typography>
+          )}
         </Card>
       </Container>
     </Box>
