@@ -128,11 +128,11 @@ const LandingPage = () => {
             sx={{
               position: 'absolute',
               top: { xs: 24, sm: 36, md: 48 },
-              left: '47%', // Position the Box 15% from the left edge across all screen sizes
-              width: { xs: '70%', sm: '50%', md: '40%' }, // Slightly increased 'md' width for better text wrapping
+              left: '47%',
+              width: { xs: '70%', sm: '50%', md: '40%' },
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'flex-start', // Align text to the left within the Box
+              alignItems: 'flex-start',
               zIndex: 2,
             }}
           >

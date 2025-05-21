@@ -114,7 +114,6 @@ const GoalList: React.FC<Props> = ({
         </div>
       ))}
 
-      {/* Delete Modal */}
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>

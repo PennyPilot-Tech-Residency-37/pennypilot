@@ -139,7 +139,6 @@ const badgeData = [
   },
 ];
 
-// Example goals data structure for demo (replace with your actual data):
 const demoGoals = [
   {
     id: 1,
@@ -174,9 +173,8 @@ const PiePercentTooltip = ({ active, payload }: any) => {
 };
 
 const getDeductionChartHeight = (numLegendItems: number) => {
-  // Base chart height + extra for legend rows (assume 3 items per row)
   const rows = Math.ceil(numLegendItems / 3);
-  return 260 + rows * 32; // 32px per legend row
+  return 260 + rows * 32;
 };
 
 export default function Dashboard() {
@@ -348,17 +346,15 @@ export default function Dashboard() {
 
     const fetchPlaidData = async () => {
       try {
-        // 1. Fetch accounts
         const accountsRes = await axios.get(`/api/linked_accounts/${currentUser.uid}`, {
           headers: { key: "dev-test-key" }
         });
         if (accountsRes.data && accountsRes.data.length > 0) {
           setPlaidAccounts(accountsRes.data);
           localStorage.setItem("plaidAccounts", JSON.stringify(accountsRes.data));
-          setPlaidError(null); // Clear any existing error
+          setPlaidError(null);
         }
 
-        // 2. Fetch transactions
         const transactionsRes = await axios.get(`/api/transactions`, {
           params: { user_id: currentUser.uid },
           headers: { key: "dev-test-key" }
@@ -377,14 +373,12 @@ export default function Dashboard() {
     };
 
     fetchPlaidData();
-    // Optionally, refetch on tab focus for freshness
     const onFocus = () => fetchPlaidData();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
     // eslint-disable-next-line
   }, [currentUser]);
 
-  // Example analytics: total balance and recent spending
   const totalBalance = plaidAccounts.reduce((sum, acct) => sum + (acct.balances?.current || 0), 0);
   const recentSpending = plaidTransactions
     .filter(txn => txn.amount < 0)
@@ -433,7 +427,6 @@ export default function Dashboard() {
   console.log("budgets", budgets);
   console.log("selectedBudget", selectedBudget);
 
-  // Remove the Firestore useEffect and replace with localStorage listener
   useEffect(() => {
     const handleStorageChange = () => {
       const stored = localStorage.getItem("goals");
@@ -781,7 +774,6 @@ export default function Dashboard() {
                   gap: 3,
                   alignItems: 'flex-start'
                 }}>
-                  {/* Left side: Goals list and chart */}
                   <Box sx={{ 
                     flex: 1,
                     display: 'flex',
@@ -789,7 +781,6 @@ export default function Dashboard() {
                     gap: 2,
                     height: '100%',
                   }}>
-                    {/* Goals list */}
                     <Box sx={{ 
                       width: '100%',
                       maxHeight: 150,
@@ -865,7 +856,6 @@ export default function Dashboard() {
                       )}
                     </Box>
 
-                    {/* Bar chart for selected goal */}
                     {selectedGoal && (
                       <Box sx={{ 
                         width: '100%',
@@ -895,7 +885,6 @@ export default function Dashboard() {
                     )}
                   </Box>
 
-                  {/* Right side: Badges */}
                   <Box sx={{ 
                     flex: 1,
                     display: 'flex',
@@ -936,14 +925,13 @@ export default function Dashboard() {
                         height: '100%',
                       }}>
                         {earnedBadges.map(badge => {
-                          // Calculate badge size based on number of badges
                           const badgeSize = Math.min(
-                            80, // Maximum size
+                            80,
                             Math.max(
-                              40, // Minimum size
-                              earnedBadges.length <= 3 ? 80 : // Large badges for 3 or fewer
-                              earnedBadges.length <= 6 ? 60 : // Medium badges for 4-6
-                              40 // Small badges for 7 or more
+                              40,
+                              earnedBadges.length <= 3 ? 80 :
+                              earnedBadges.length <= 6 ? 60 :
+                              40
                             )
                           );
                           
@@ -1011,7 +999,6 @@ export default function Dashboard() {
           message={error}
           ContentProps={{ sx: { backgroundColor: "error.main" } }}
         />
-        {/* --- Plaid Bank Info Section --- */}
         <Card sx={{ p: 3, mt: 4, mb: 4, borderRadius: 2, boxShadow: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <AccountBalanceIcon color="primary" sx={{ fontSize: 40, mr: 1 }} />

@@ -1,4 +1,3 @@
-// src/components/Footer.tsx
 import React from 'react';
 import { Box, Typography, Link as MuiLink } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -35,7 +34,6 @@ const Footer = () => {
           gap: 3,
         }}
       >
-        {/* App Name / Logo Section */}
         <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', mt: -3 }}>
           <RouterLink to="/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
             <img
@@ -52,7 +50,6 @@ const Footer = () => {
           </Typography>
         </Box>
 
-        {/* Navigation Links */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
             Quick Links
@@ -95,7 +92,6 @@ const Footer = () => {
           </MuiLink>
         </Box>
 
-        {/* About Us Section */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, maxWidth: 200, mx: { xs: 'auto', sm: 0 } }}>
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
             About Us
@@ -119,7 +115,6 @@ const Footer = () => {
           </Typography>
         </Box>
 
-        {/* Team Section */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             Algorithm Alliance
@@ -202,7 +197,6 @@ const Footer = () => {
           </Typography>
         </Box>
 
-        {/* GitHub Section */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
             Find Us On GitHub
@@ -220,7 +214,6 @@ const Footer = () => {
         </Box>
       </Box>
 
-      {/* Copyright Notice */}
       <br />
       <Typography variant="body2" sx={{ opacity: 0.7 }}>
         © {new Date().getFullYear()} PennyPilot. All rights reserved.

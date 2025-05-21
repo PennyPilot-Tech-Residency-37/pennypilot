@@ -23,7 +23,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 
 const COLORS = ["#1976d2", "#f57c00", "#fbc02d"];
 
-// Custom theme for consistency
 const theme = createTheme({
   palette: {
     primary: {
@@ -69,7 +68,6 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ position: "relative", width: "100%", px: 2 }}>
-        {/* PennyPilot Image */}
         <Box
           component="img"
           src="/images/pennypilot.png"
@@ -84,7 +82,6 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
           }}
         />
 
-        {/* Create New Budget Button */}
         <Box
           sx={{
             mb: -1,
@@ -126,7 +123,6 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
           </Button>
         </Box>
 
-        {/* List of User Budgets with edit/delete */}
         <Box
           sx={{
             mt: 13,
@@ -218,11 +214,10 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
             </DialogActions>
           </Dialog>
         )}
-        {/* Pie Chart for Budget Breakdown */}
         <Box
           sx={{
             mt: 5,
-            height: 450, // Increased height to accommodate lower legend
+            height: 450,
             width: "100%",
             display: "flex",
             flexDirection: "column",

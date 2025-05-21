@@ -55,7 +55,6 @@ interface BudgetAlert {
   message: string;
   triggered: boolean;
 }
-// Custom MUI theme for consistency
 const theme = createTheme({
   spacing: 8,
   typography: {
@@ -114,7 +113,6 @@ const BudgetBoard = () => {
   const [plaidLoading, setPlaidLoading] = useState(false);
   const isDashboardReady = currentBudget && accounts.length > 0 && transactions.length > 0;
   // const { fetchLinkToken, openPlaid, ready } = usePlaid();
-  // Add new state for backup
   const [lastBackupTime, setLastBackupTime] = useState<string | null>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({
@@ -124,7 +122,6 @@ const BudgetBoard = () => {
   });
 
   
-  // 1. Load budgets from localStorage on mount
   useEffect(() => {
     console.log("Loading budgets from localStorage...");
     const storedBudgets = localStorage.getItem("budgets");
@@ -133,14 +130,12 @@ const BudgetBoard = () => {
       try {
         const parsed = JSON.parse(storedBudgets);
         console.log("Parsed budgets:", parsed);
-        // Ensure each budget has a fallback ID if missing
         const fixed = parsed.map((b: any, index: number) => ({
           ...b,
           id: b.id || `local-${index}-${Date.now()}`
         }));
         console.log("Fixed budgets:", fixed);
         setBudgets(fixed);
-        // Only set current budget if none is selected
         if (!currentBudget && fixed.length > 0) {
           console.log("Setting current budget to:", fixed[0]);
           setCurrentBudget(fixed[0]);
@@ -152,7 +147,6 @@ const BudgetBoard = () => {
   }, []);
   
 
-  // 2. Save budgets to localStorage on every change
   useEffect(() => {
     console.log("Saving budgets to localStorage:", budgets);
     if (budgets.length > 0) {
@@ -160,7 +154,6 @@ const BudgetBoard = () => {
     }
   }, [budgets]);
 
-  // 3. Save current budget to localStorage when it changes
   useEffect(() => {
     console.log("Saving current budget to localStorage:", currentBudget);
     if (currentBudget) {
@@ -168,7 +161,6 @@ const BudgetBoard = () => {
     }
   }, [currentBudget]);
 
-  // 4. Keep Plaid data separate
   useEffect(() => {
     const storedAccounts = localStorage.getItem("plaidAccounts");
     if (storedAccounts) {
@@ -186,7 +178,6 @@ const BudgetBoard = () => {
     }
   }, [accounts]);
 
-  // Add a localStorage event listener for real-time sync across tabs
   useEffect(() => {
     const handleStorage = () => {
       const storedBudgets = localStorage.getItem("budgets");
@@ -215,7 +206,6 @@ const BudgetBoard = () => {
     token: linkToken || '',
     onSuccess: async (public_token, metadata) => {
       try {
-        // 1. Exchange token
         const res = await axios.post("/api/exchange_public_token", {
           public_token,
           key: 'dev-test-key',
@@ -223,10 +213,8 @@ const BudgetBoard = () => {
         });
         console.log('✅ Access token exchange successful:', res.data);
   
-        // 2. Fetch accounts
         await fetchAccounts();
   
-        // 3. Fetch transactions
         const txRes = await axios.get(`/api/transactions`, {
           params: {
             user_id: currentUser?.uid,
@@ -238,10 +226,8 @@ const BudgetBoard = () => {
           }
         });
   
-        // 4. Categorize transactions
         const categorized = categorizeTransactions(txRes.data.transactions);
   
-        // 5. Generate new budget from categorized transactions
         const newBudget: Budget = {
           id: Date.now().toString(),
           name: `Auto Budget - ${new Date().toLocaleDateString()}`,
@@ -253,14 +239,12 @@ const BudgetBoard = () => {
           createdAt: new Date().toISOString()
         };
   
-        // 6. Update UI state
         const updatedBudgets = [...budgets, newBudget];
         setBudgets(updatedBudgets);
         setCurrentBudget(newBudget);
         localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
         localStorage.setItem("currentBudget", JSON.stringify(newBudget));
   
-        // 7. Show success message
         setNotification({ message: "Your budget was created from your bank data!", type: "success" });
   
       } catch (err) {

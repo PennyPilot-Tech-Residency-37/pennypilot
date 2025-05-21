@@ -52,8 +52,8 @@ const theme = createTheme({
 
 interface BudgetItem {
   name: string;
-  amount: string; // Budgeted amount
-  activity: string; // Activity (now editable)
+  amount: string;
+  activity: string;
 }
 
 interface BudgetGroupProps {
