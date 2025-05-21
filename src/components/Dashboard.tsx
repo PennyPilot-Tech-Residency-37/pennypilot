@@ -157,6 +157,28 @@ const demoGoals = [
   },
 ];
 
+const PiePercentTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length > 0) {
+    const value = payload[0].value;
+    const total = payload[0].payload && payload[0].payload.total ? payload[0].payload.total : payload.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
+    if (total > 0) {
+      const percent = ((value / total) * 100).toFixed(1);
+      return (
+        <div style={{ background: '#fff', border: '1px solid #ccc', padding: '4px 8px', borderRadius: 4 }}>
+          <span>{percent}%</span>
+        </div>
+      );
+    }
+  }
+  return null;
+};
+
+const getDeductionChartHeight = (numLegendItems: number) => {
+  // Base chart height + extra for legend rows (assume 3 items per row)
+  const rows = Math.ceil(numLegendItems / 3);
+  return 260 + rows * 32; // 32px per legend row
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -285,7 +307,7 @@ export default function Dashboard() {
     window.addEventListener('storage', syncFromStorage);
     syncFromStorage();
     return () => window.removeEventListener('storage', syncFromStorage);
-  }, [selectedBudget]);
+  }, []);
 
   // Save selected budget to localStorage when it changes
   useEffect(() => {
@@ -524,6 +546,9 @@ export default function Dashboard() {
     }
   }, [linkToken, plaidLinkReady, plaidLinkOpen]);
 
+  const deductionLegendItems = groupExpensesByCategory(deductibleExpenses);
+  const deductionChartHeight = getDeductionChartHeight(deductionLegendItems.length);
+
   return (
     <Box
       sx={{
@@ -622,14 +647,19 @@ export default function Dashboard() {
                                 onClick={() => handleBudgetSelect(budget)}
                                 sx={{
                                   borderRadius: 1,
-                                  mb: 1,
+                                  mb: 0.5,
                                   backgroundColor: selectedBudget?.id === budget.id ? "primary.light" : "transparent",
                                   "&:hover": { backgroundColor: "primary.light" },
+                                  minHeight: 28,
+                                  px: 1.5,
+                                  width: '96%',
+                                  mx: 'auto',
                                 }}
                               >
                                 <ListItemText
                                   primary={budget.name}
-                                  primaryTypographyProps={{ fontWeight: selectedBudget?.id === budget.id ? "bold" : "normal" }}
+                                  primaryTypographyProps={{ fontWeight: selectedBudget?.id === budget.id ? "bold" : "normal", fontSize: "0.95rem" }}
+                                  sx={{ my: 0 }}
                                 />
                               </ListItem>
                             ))}
@@ -661,34 +691,32 @@ export default function Dashboard() {
                       ) : (
                         <>
                           <ResponsiveContainer width="100%" height="100%">
-                            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                            <PieChart margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
                               <Legend 
                                 layout="horizontal"
-                                align="right"
-                                verticalAlign="top"
-                                wrapperStyle={{ paddingBottom: 20 }}
+                                align="center"
+                                verticalAlign="bottom"
+                                wrapperStyle={{ paddingTop: 20 }}
                               />
                               <Pie
                                 data={[
                                   { name: "Income", value: sum(selectedBudget.data.income) },
                                   { name: "Expenses", value: sum(selectedBudget.data.expenses) },
                                   { name: "Savings", value: sum(selectedBudget.data.savings) }
-                                ]}
+                                ].map(d => ({ ...d, total: sum(selectedBudget.data.income) + sum(selectedBudget.data.expenses) + sum(selectedBudget.data.savings) }))}
                                 dataKey="value"
                                 nameKey="name"
                                 cx="50%"
-                                cy="50%"
+                                cy="45%"
                                 outerRadius={80}
-                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                                label={({ value }) => `$${value.toFixed(2)}`}
                                 labelLine={false}
                               >
                                 {BUDGET_COLORS.map((color, index) => (
                                   <Cell key={`cell-${index}`} fill={color} />
                                 ))}
                               </Pie>
-                              <Tooltip 
-                                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                              />
+                              <Tooltip content={<PiePercentTooltip />} />
                             </PieChart>
                           </ResponsiveContainer>
                         </>
@@ -704,7 +732,7 @@ export default function Dashboard() {
                     <Typography variant="h6" gutterBottom>
                       Tax Deductions Summary
                     </Typography>
-                    <Typography variant="h4" sx={{ mb: 2 }}>
+                    <Typography variant="h4" sx={{ mt: 8, mb: 2 }}>
                       Total Tax Deductions: ${totalDeductibleSpent.toFixed(2)}
                     </Typography>
                     <Button 
@@ -717,34 +745,25 @@ export default function Dashboard() {
                     </Button>
                   </Box>
                   
-                  <Box sx={{ flex: 1, height: 300, paddingBottom: 6 }}>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <PieChart>
+                  <Box sx={{ flex: 1, minHeight: deductionChartHeight, height: 'auto', paddingBottom: 2, mb: 1 }}>
+                    <ResponsiveContainer width="100%" height={deductionChartHeight}>
+                      <PieChart margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
                         <Pie
-                          data={groupExpensesByCategory(deductibleExpenses)}
+                          data={deductionLegendItems.map(d => ({ ...d, total: deductionLegendItems.reduce((sum, item) => sum + item.value, 0) }))}
                           dataKey="value"
                           nameKey="name"
                           cx="50%"
-                          cy="50%" 
+                          cy="45%"
                           outerRadius={80}
-                          label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                          label={({ value }) => `$${value.toFixed(2)}`}
                           labelLine={false}
                         >
-                          {groupExpensesByCategory(deductibleExpenses).map((entry, index) => (
+                          {deductionLegendItems.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={DEDUCTION_COLORS[index % DEDUCTION_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Legend
-                          layout="horizontal"
-                          verticalAlign="bottom"
-                          align="center"
-                          wrapperStyle={{
-                            paddingTop: "120px", // Further increased to move legend lower into the available space
-                            fontSize: "14px", // Ensure readability
-                            lineHeight: "24px", // Proper spacing between legend items
-                            bottom: 80,
-                          }}
-                        />
+                        <Tooltip content={<PiePercentTooltip />} />
+                        <Legend layout="horizontal" align="center" verticalAlign="bottom" wrapperStyle={{ marginTop: 10, fontSize: '14px', flexWrap: 'wrap', maxWidth: '100%', overflowY: 'auto', maxHeight: 300 }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </Box>
@@ -822,17 +841,23 @@ export default function Dashboard() {
                               onClick={() => setSelectedGoalId(goal.id.toString())}
                               sx={{
                                 borderRadius: 1,
-                                mb: 1,
+                                mb: 0.5,
                                 backgroundColor: goal.id.toString() === selectedGoalId ? 'primary.light' : 'transparent',
                                 '&:hover': { backgroundColor: 'primary.light' },
+                                minHeight: 28,
+                                px: 1.5,
+                                width: '96%',
+                                mx: 'auto',
                               }}
                             >
                               <ListItemText
                                 primary={goal.name}
                                 secondary={`Target: $${goal.amount}`}
                                 primaryTypographyProps={{ 
-                                  fontWeight: goal.id.toString() === selectedGoalId ? 700 : 400 
+                                  fontWeight: goal.id.toString() === selectedGoalId ? 700 : 400,
+                                  fontSize: '0.95rem'
                                 }}
+                                sx={{ my: 0 }}
                               />
                             </ListItem>
                           ))}
@@ -1011,6 +1036,7 @@ export default function Dashboard() {
                 }}
               />
             )}
+            
             <Button
               variant="contained"
               color="primary"

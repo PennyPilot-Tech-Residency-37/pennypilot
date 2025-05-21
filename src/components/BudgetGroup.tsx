@@ -260,10 +260,10 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions, expanded, onTo
           expandIcon={<ExpandMoreIcon sx={{ fontSize: "18px" }} />}
           sx={{
             bgcolor: "#f5f5f5",
-            minHeight: "26px !important",
+            minHeight: "18px !important",
             padding: "0 8px",
             margin: 0,
-            "&.Mui-expanded": { minHeight: "26px !important" },
+            "&.Mui-expanded": { minHeight: "18px !important" },
             "& .MuiAccordionSummary-content": { margin: 0 }
           }}
         >
