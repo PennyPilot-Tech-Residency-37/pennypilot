@@ -1025,27 +1025,26 @@ export default function Dashboard() {
             )}
             
             <Button
-              variant="contained"
-              color="primary"
+              variant="outlined"
               onClick={handleConnectBank}
               disabled={plaidLoading}
               sx={{
-                px: 3,
-                py: 1.25,
-                fontSize: { xs: "0.95rem", sm: "1rem" },
-                fontWeight: 700,
+                py: 1,
+                px: 2,
+                fontSize: '0.95rem',
+                mt: 2,
                 borderRadius: 2,
-                boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
-                background: "#fbc02d",
-                color: "#fff",
+                borderWidth: 2,
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                boxShadow: 'none',
+                transition: 'all 0.2s',
                 '&:hover': {
-                  background: "#e6ac00",
-                  color: "#fff",
-                  boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
-                },
-                '&:active': {
-                  boxShadow: "0 2px 8px rgba(25, 118, 210, 0.18)",
-                  background: "#c49000",
+                  backgroundColor: 'primary.main',
+                  color: '#fff',
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                  transform: 'translateY(-2px)',
                 },
               }}
             >

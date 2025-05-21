@@ -614,18 +614,24 @@ export default function TaxPrep() {
                     <Box sx={{ display: "flex", gap: 2 }}>
                       <Button 
                         type="submit" 
-                        variant="contained" 
-                        color="primary"
+                        variant="outlined"
                         sx={{
-                          py: 1.5,
-                          px: 4,
+                          py: 1,
+                          px: 2,
                           borderRadius: 2,
                           textTransform: 'none',
-                          fontSize: '1.1rem',
-                          boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                          fontSize: '0.95rem',
+                          borderWidth: 2,
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                          boxShadow: 'none',
+                          transition: 'all 0.2s',
                           '&:hover': {
+                            backgroundColor: 'primary.main',
+                            color: '#fff',
+                            borderColor: 'primary.main',
+                            boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
                             transform: 'translateY(-2px)',
-                            boxShadow: (theme) => `0 6px 20px ${alpha(theme.palette.primary.main, 0.6)}`,
                           },
                         }}
                       >
