@@ -33,16 +33,21 @@ jobs:
     - name: Install Backend Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r backend/requirements.txt
-    - name: Run Backend Tests
+        pip install -r requirements.txt
+    - name: Run Backend Tests (if present)
       env:
-        SQLALCHEMY_DATABASE_URI: ${{ secrets.SQLALCHEMY_DATABASE_URI }}
-        PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
-        PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
-        PLAID_ENV: ${{ secrets.PLAID_ENV }}
-        GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SQLALCHEMY_DATABASE_URI: ${{ secrets.SQLALCHEMY_DATABASE_URI }}
+          PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
+          PLAID_ENV: ${{ secrets.PLAID_ENV }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
       run: |
-        pytest backend/tests
+        if [ -d "backend/tests" ]; then
+          pytest backend/tests
+        else
+          echo "No backend tests found — skipping"
+        fi
+      
   frontend:
     runs-on: ubuntu-latest
     needs: backend
@@ -55,7 +60,7 @@ jobs:
         node-version: 20
     - name: Install Frontend Dependencies
       run: npm ci
-      working-directory: frontend
+      working-directory: .
     - name: Build Frontend
       env:
         VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
@@ -65,4 +70,37 @@ jobs:
         VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
         VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
       run: npm run build
-      working-directory: frontend
+      working-directory: .
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/pennypilot
+            git pull origin main
+
+            # Overwrite .env if ENV_FILE is provided
+            if [ ! -z "${{ secrets.ENV_FILE }}" ]; then
+              echo "${{ secrets.ENV_FILE }}" > .env
+            fi
+
+            cd ~/pennypilot
+            npm install
+            NODE_OPTIONS="--max-old-space-size=2048" npm run build
+
+            sudo systemctl restart pennypilot
+          EOF
+    
