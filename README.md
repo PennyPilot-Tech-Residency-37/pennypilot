@@ -1,68 +1,160 @@
-# Getting Started with PennyPilot (Develop Branch)
+# PennyPilot
 
-Welcome to the **PennyPilot** repo! This `develop` branch is the active working branch where all new features are created, tested, and reviewed before merging into production (`main`).
-
-If you’re a contributor, follow these steps to set up your environment and start working on your own feature branch.
+PennyPilot is a gamified financial planning web application designed to help users build better budgeting habits, track spending, and visualize savings goals. By integrating bank data via the Plaid API, users can link their accounts and automatically populate budget tables and charts. The app uses a combination of interactive visuals, progress tracking, and financial education tools to engage users and support long-term financial health.
 
 ---
 
-## Step 1: Fork the Repository
+## 🚀 Setup & Installation Guide
 
-1. Go to the main repo: [https://github.com/PennyPilot-Tech-Residency-37/pennypilot](https://github.com/PennyPilot-Tech-Residency-37/pennypilot)
-2. Click the **Fork** button in the top-right corner
-3. Choose your personal GitHub account as the destination
+Follow these steps to get the project running locally for development or testing.
+
+### Prerequisites
+
+- Node.js (v18 or above)
+- Python 3.10+
+- MySQL or PostgreSQL
+- Virtual environment tool (e.g. `venv` or `virtualenv`)
+- Plaid API keys
+- AWS EC2 instance (for deployment)
 
 ---
 
-## Step 2: Clone Your Fork
-
-In your terminal:
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/pennypilot.git
+git clone https://github.com/your-org/pennypilot.git
+```
+### 2. Frontend Setup (React)
+``` bash
 cd pennypilot
-git remote add upstream https://github.com/YourOrgOrUser/pennypilot.git
-```
-
-## Step 3: Create Your Feature Branch (From Develop)
-Always branch off from the develop branch when working on a new feature.
-
-```
-git checkout develop
-git pull upstream develop
-git checkout -b feature/your-feature-name
-```
-
-## Step 4: Install Dependencies
-Make sure you're in the root directory of the project, then run:
-```
 npm install
-```
-This will install all necessary packages in package.json.
-
-If you're using yarn instead:
-```
-yarn install
-```
-## Step 5: Stay Updated with the develop Branch
-To make sure your branch always has the latest changes:
-```
-git checkout develop
-git pull upstream develop
-git checkout feature/your-feature-name
-git merge develop
-```
-Resolve any merge conflicts if they occur.
-
-## Step 6: Run the App Locally
-Once everything is installed, run:
-```
 npm run dev
 ```
+### 3. Backend Setup (Flask + SQLAlchemy)
+``` bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pip install -r requirements.txt
+```
+Environment Variables & Secrets
 
-## Authors
+To run this project locally or in a deployment environment, you will need access to environment variables for services such as Plaid, Firebase, and the database connection.
 
-- Jaycob Hoffman
-- Alex Alarcon
-- Jennifer Coppick
-- Kevin Jones
+We’ve provided a `.env.example` file in the root directory.
+To get started:
+
+1. Copy the `.env.example` file to create your local `.env` file
+2. Fill in the actual values by referencing project secrets stored in GitHub Secrets.
+    - This project uses GitHub Actions for CI/CD. Sensitive keys are stored securely in GitHub Secrets, which are automatically injected during build and deployment workflows.
+    - To request access:
+
+Contact a project maintainer
+Access is granted only to trusted collaborators with write/admin permissions
+
+Once granted, secrets such as the following will be available in the Actions environment:
+
+PLAID_CLIENT_ID
+
+PLAID_SECRET
+
+FIREBASE_API_KEY
+
+DATABASE_URL
+
+SECRET_KEY
+
+These are not available to local development automatically. You must retrieve them securely and insert them manually into your local .env files using the .env.example template as a guide.
+
+
+Run the backend server:
+``` bash
+flask run
+```
+### 4. Database Initialization
+Ensure your local MySQL/PostgreSQL server is running.
+``` bash
+flask db init
+flask db migrate
+flask db upgrade
+```
+### 5. Deploying to AWS EC2
+- see guide through this link: https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-steps-server.html
+
+### Project Overview
+- Link your bank accounts securely via Plaid
+
+- Automatically categorize transactions into income, expenses, and savings
+
+- Visualize your budget breakdown and progress
+
+- Earn rewards and achievements for meeting goals
+
+- Securely authenticate via Firebase
+
+### Screenshots and Diagrams
+"Insert visuals here"
+
+### Team Structure
+
+Frontend
+
+- Built with React, styled using Material UI
+
+- State management: Redux Toolkit + React Query
+
+- Authentication via Firebase Auth
+
+Responsibilities:
+
+- UI design and responsiveness
+
+- Budget table & chart rendering
+
+- Plaid Link integration on client side
+
+Backend
+
+- Developed using Flask and SQLAlchemy
+
+- Implements a secure RESTful API
+
+- Handles Plaid token exchanges and transaction storage
+
+- Manages budget logic and database interaction
+
+Responsibilities:
+
+- Secure token handling and API routing
+
+- Data transformation and storage
+
+- Database migrations
+
+Cybersecurity
+
+- Responsible for securing both backend and frontend systems
+
+Implements:
+
+- API key validation
+
+- Secure storage of access tokens
+
+- HTTPS and CORS headers
+
+- Performs vulnerability scans and sets up basic monitoring
+
+- Reviews access control and data privacy practices
+
+### Contributors
+
+Alex Alarcon — Frontend
+
+Jennifer Coppick — Frontend
+
+Jaycob Hoffman — Backend
+
+Jared Wilson — Backend
+
+Kevin Jones — Cybersecurity
