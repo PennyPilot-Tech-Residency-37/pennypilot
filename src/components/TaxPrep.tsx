@@ -45,6 +45,9 @@ import {
 } from "firebase/firestore";
 import { alpha } from '@mui/material/styles';
 import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import { Document, Packer, Paragraph, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, TextRun, WidthType } from 'docx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface DeductibleExpense {
   id?: string;
@@ -156,7 +159,16 @@ export default function TaxPrep() {
       }
 
       console.log('Loading tax prep data for user:', currentUser.uid);
-      const expenses = await getUserData('taxPrep', 'deductibleExpenses') || [];
+      let expenses = await getUserData('taxPrep', 'deductibleExpenses');
+      if (!expenses || !Array.isArray(expenses) || expenses.length === 0) {
+        // Fallback to localStorage if user data is empty
+        const local = localStorage.getItem('deductibleExpenses');
+        if (local) {
+          try {
+            expenses = JSON.parse(local);
+          } catch {}
+        }
+      }
       console.log('Loaded expenses for user', currentUser.uid, ':', expenses);
         if (Array.isArray(expenses)) {
           setDeductibleExpenses(expenses);
@@ -240,6 +252,7 @@ export default function TaxPrep() {
       console.log('Updated expenses to save:', updatedExpenses);
       setDeductibleExpenses(updatedExpenses);
       await setUserData('taxPrep', 'deductibleExpenses', updatedExpenses);
+      localStorage.setItem('deductibleExpenses', JSON.stringify(updatedExpenses));
       setFormData(initialFormState);
       setSuccess(editingId ? "Expense updated successfully!" : "Expense added successfully!");
     } catch (err) {
@@ -274,6 +287,7 @@ export default function TaxPrep() {
       console.log('Updated expenses after delete:', updatedExpenses);
       setDeductibleExpenses(updatedExpenses);
       await setUserData('taxPrep', 'deductibleExpenses', updatedExpenses);
+      localStorage.setItem('deductibleExpenses', JSON.stringify(updatedExpenses));
       setSuccess("Expense deleted successfully!");
     } catch (err) {
       console.error('Error deleting expense:', err);
@@ -308,6 +322,75 @@ export default function TaxPrep() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Export as Word
+  const handleExportWord = () => {
+    if (!deductibleExpenses.length) {
+      setError("No expenses to export.");
+      return;
+    }
+    const tableRows = [
+      new DocxTableRow({
+        children: [
+          new DocxTableCell({ children: [new Paragraph("Date")], width: { size: 25, type: WidthType.PERCENTAGE } }),
+          new DocxTableCell({ children: [new Paragraph("Category")], width: { size: 25, type: WidthType.PERCENTAGE } }),
+          new DocxTableCell({ children: [new Paragraph("Amount")], width: { size: 25, type: WidthType.PERCENTAGE } }),
+          new DocxTableCell({ children: [new Paragraph("Notes")], width: { size: 25, type: WidthType.PERCENTAGE } }),
+        ],
+      }),
+      ...deductibleExpenses.map(expense => new DocxTableRow({
+        children: [
+          new DocxTableCell({ children: [new Paragraph(new Date(expense.createdAt).toLocaleDateString())] }),
+          new DocxTableCell({ children: [new Paragraph(expense.category)] }),
+          new DocxTableCell({ children: [new Paragraph(`$${expense.deductibleAmount}`)] }),
+          new DocxTableCell({ children: [new Paragraph(expense.notes)] }),
+        ],
+      }))
+    ];
+    const doc = new Document({
+      sections: [
+        {
+          children: [
+            new Paragraph({ text: "Deductible Expenses", heading: "Heading1" }),
+            new DocxTable({ rows: tableRows }),
+          ],
+        },
+      ],
+    });
+    Packer.toBlob(doc).then((blob: Blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `deductible-expenses-${new Date().toISOString().split('T')[0]}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    });
+  };
+
+  // Export as PDF
+  const handleExportPDF = () => {
+    if (!deductibleExpenses.length) {
+      setError("No expenses to export.");
+      return;
+    }
+    const doc = new jsPDF();
+    doc.text("Deductible Expenses", 14, 16);
+    autoTable(doc, {
+      startY: 22,
+      head: [["Date", "Category", "Amount", "Notes"]],
+      body: deductibleExpenses.map(expense => [
+        new Date(expense.createdAt).toLocaleDateString(),
+        expense.category,
+        `$${expense.deductibleAmount}`,
+        expense.notes
+      ]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [25, 118, 210] },
+    });
+    doc.save(`deductible-expenses-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const LoadingSpinner = () => (
@@ -442,7 +525,7 @@ export default function TaxPrep() {
             {/* Entry Form */}
             <Card 
               sx={{ 
-                p: 4,
+                p: 2,
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-4px)',
@@ -454,11 +537,11 @@ export default function TaxPrep() {
                 background: (theme) => `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
               }}
             >
-              <Typography variant="h5" sx={{ mb: 8, fontWeight: 600, color: 'primary.main' }}>
+              <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: 'primary.main' }}>
                 {editingId ? "Edit Deductible Expense" : "Add Deductible Expense"}
               </Typography>
               <form onSubmit={handleSave}>
-                <Grid container spacing={3}>
+                <Grid container spacing={1}>
                   <Grid item xs={12} sm={6}>
                     <TextField
                       name="deductibleAmount"
@@ -574,7 +657,7 @@ export default function TaxPrep() {
               <Grid item xs={12} md={6}>
                 <Card 
                   sx={{ 
-                    p: 3,
+                    p: 2,
                     height: '100%',
                     transition: 'all 0.3s ease-in-out',
                     '&:hover': {
@@ -587,38 +670,101 @@ export default function TaxPrep() {
                     background: (theme) => `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
                   }}
                 >
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'primary.main' }}>
+                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}>
                     Summary
                   </Typography>
-                  <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: 'success.main' }}>
+                  <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 700, color: 'success.main' }}>
                     Total Tax Deductions: ${totalDeductibleSpent.toFixed(2)}
           </Typography>
-          <Button
-            variant="contained"
-                    startIcon={<FileDownloadIcon />}
-                    onClick={handleExport}
-                    disabled={!deductibleExpenses.length}
-                    sx={{
-                      py: 1.5,
-                      px: 4,
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontSize: '1.1rem',
-                      boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: (theme) => `0 6px 20px ${alpha(theme.palette.primary.main, 0.6)}`,
-                      },
-                    }}
-                  >
-                    Export CSV
-          </Button>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'flex-start' }}>
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExport}
+              disabled={!deductibleExpenses.length}
+              sx={{
+                py: 1,
+                px: 2,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                borderWidth: 2,
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                boxShadow: 'none',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  backgroundColor: 'primary.main',
+                  color: '#fff',
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExportWord}
+              disabled={!deductibleExpenses.length}
+              sx={{
+                py: 1,
+                px: 2,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                borderWidth: 2,
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                boxShadow: 'none',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  backgroundColor: 'primary.main',
+                  color: '#fff',
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              Export Word
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExportPDF}
+              disabled={!deductibleExpenses.length}
+              sx={{
+                py: 1,
+                px: 2,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                borderWidth: 2,
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                boxShadow: 'none',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  backgroundColor: 'primary.main',
+                  color: '#fff',
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              Export PDF
+            </Button>
+          </Box>
                 </Card>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Card 
                   sx={{ 
-                    p: 3,
+                    p: 2,
                     height: '100%',
                     transition: 'all 0.3s ease-in-out',
                     '&:hover': {
@@ -631,7 +777,7 @@ export default function TaxPrep() {
                     background: (theme) => `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
                   }}
                 >
-                  <Typography variant="h6" sx={{ mt: 6, mb: 8, fontWeight: 800, color: 'primary.main', textAlign: 'center' }}>
+                  <Typography variant="h6" sx={{ mt: 2, mb: 3, fontWeight: 800, color: 'primary.main', textAlign: 'center' }}>
                     Expenses by Category
                   </Typography>
                   <Box sx={{ flex: 1, height: 350 }}>
@@ -681,10 +827,13 @@ export default function TaxPrep() {
               </Grid>
             </Grid>
 
+            {/* Space below chart section and above logged expenses */}
+            <Box sx={{ height: 24 }} />
+
             {/* Expenses Table */}
             <Card 
               sx={{ 
-                p: 3,
+                p: 2,
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
                   transform: 'translateY(-4px)',
@@ -696,7 +845,7 @@ export default function TaxPrep() {
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
+                <Typography variant="h6" sx={{ mb: 1 }}>
                   Logged Expenses
           </Typography>
                 <FormControl sx={{ minWidth: 200 }}>
@@ -754,7 +903,7 @@ export default function TaxPrep() {
               </TableHead>
               <TableBody>
                     {getFilteredAndSortedExpenses().map((expense) => (
-                  <TableRow key={expense.id}>
+                  <TableRow key={expense.id} sx={{ height: 18}}>
                         <TableCell>${Number(expense.deductibleAmount).toFixed(2)}</TableCell>
                     <TableCell>{expense.category}</TableCell>
                         <TableCell>{expense.notes}</TableCell>
