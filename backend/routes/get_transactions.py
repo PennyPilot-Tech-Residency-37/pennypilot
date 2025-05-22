@@ -62,5 +62,5 @@ def setup_get_transactions(app, session):
             })
 
         except Exception as e:
-            app.logger.error(f"Error fetching transactions: {str(e)}")
+            app.logger.error("Error fetching transactions", exc_info=True)
             return jsonify({"error": "Failed to fetch transactions"}), 500

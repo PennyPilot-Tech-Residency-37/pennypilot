@@ -11,7 +11,9 @@ def setup_user_routes(app):
         try:
             user_data = user_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"User validation failed: {e.messages}")
+            return jsonify({"error": "Invalid user data."}), 400
+
         
         new_user = User(name=user_data['name'], email=user_data['email'], phone=user_data['phone'])
 
@@ -35,7 +37,8 @@ def setup_user_routes(app):
         try:
             user_data = user_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"User validation failed: {e.messages}")
+            return jsonify({"error": "Invalid user data."}), 400
         
         user.name = user_data['name']
         user.email = user_data['email']

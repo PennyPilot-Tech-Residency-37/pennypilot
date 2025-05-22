@@ -123,39 +123,31 @@ const BudgetBoard = () => {
 
   
   useEffect(() => {
-    console.log("Loading budgets from localStorage...");
     const storedBudgets = localStorage.getItem("budgets");
-    console.log("Stored budgets:", storedBudgets);
     if (storedBudgets) {
       try {
         const parsed = JSON.parse(storedBudgets);
-        console.log("Parsed budgets:", parsed);
         const fixed = parsed.map((b: any, index: number) => ({
           ...b,
           id: b.id || `local-${index}-${Date.now()}`
         }));
-        console.log("Fixed budgets:", fixed);
         setBudgets(fixed);
         if (!currentBudget && fixed.length > 0) {
-          console.log("Setting current budget to:", fixed[0]);
           setCurrentBudget(fixed[0]);
         }
       } catch (e) {
-        console.error("Failed to parse stored budgets:", e);
       }
     }
   }, []);
   
 
   useEffect(() => {
-    console.log("Saving budgets to localStorage:", budgets);
     if (budgets.length > 0) {
       localStorage.setItem("budgets", JSON.stringify(budgets));
     }
   }, [budgets]);
 
   useEffect(() => {
-    console.log("Saving current budget to localStorage:", currentBudget);
     if (currentBudget) {
       localStorage.setItem("currentBudget", JSON.stringify(currentBudget));
     }
@@ -167,7 +159,6 @@ const BudgetBoard = () => {
       try {
         setAccounts(JSON.parse(storedAccounts));
       } catch (e) {
-        console.error("Failed to parse stored Plaid accounts:", e);
       }
     }
   }, []);
@@ -186,7 +177,6 @@ const BudgetBoard = () => {
           const parsed = JSON.parse(storedBudgets);
           setBudgets(parsed);
         } catch (e) {
-          console.error("Failed to parse stored budgets:", e);
         }
       }
       const storedCurrent = localStorage.getItem("currentBudget");
@@ -194,7 +184,6 @@ const BudgetBoard = () => {
         try {
           setCurrentBudget(JSON.parse(storedCurrent));
         } catch (e) {
-          console.error("Failed to parse current budget:", e);
         }
       }
     };
@@ -210,9 +199,7 @@ const BudgetBoard = () => {
           public_token,
           key: 'dev-test-key',
           user_id: currentUser?.uid,
-        });
-        console.log('✅ Access token exchange successful:', res.data);
-  
+        });  
         await fetchAccounts();
   
         const txRes = await axios.get(`/api/transactions`, {
@@ -248,7 +235,6 @@ const BudgetBoard = () => {
         setNotification({ message: "Your budget was created from your bank data!", type: "success" });
   
       } catch (err) {
-        console.error('❌ Error creating budget from Plaid data:', err);
         setNotification({ message: "Something went wrong while generating your budget.", type: "error" });
       }
     }
@@ -266,7 +252,6 @@ const BudgetBoard = () => {
       const token = res.data.link_token;
       setLinkToken(token);
     } catch (err) {
-      console.error("❌ Failed to fetch link token:", err);
       setPlaidLoading(false);
     }
   };  
@@ -281,7 +266,6 @@ const BudgetBoard = () => {
   
 
     const handleFinishSetup = async (data: BudgetData, name: string) => {
-      console.log("Creating new budget with data:", data, "name:", name);
       const newBudget = {
         id: Date.now().toString(),
         name: name || `Budget ${budgets.length + 1}`,
@@ -292,16 +276,13 @@ const BudgetBoard = () => {
         },
         createdAt: new Date().toISOString(),
       };
-      console.log("New budget object:", newBudget);
 
       // Append new budget to existing budgets
       const updatedBudgets = [...budgets, newBudget];
-      console.log("Updated budgets array:", updatedBudgets);
       setBudgets(updatedBudgets);
       localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
 
       // Set as current budget
-      console.log("Setting current budget to:", newBudget);
       setCurrentBudget(newBudget);
       localStorage.setItem("currentBudget", JSON.stringify(newBudget));
       
@@ -313,7 +294,6 @@ const BudgetBoard = () => {
     type: "income" | "expenses" | "savings",
     items: { name: string; amount: string; spent?: string }[]
   ) => {
-    console.log("Updating budget:", type, items);
     if (!currentBudget) return;
     
     const updatedBudget = {
@@ -323,7 +303,6 @@ const BudgetBoard = () => {
         [type]: items,
       },
     };
-    console.log("Updated budget:", updatedBudget);
 
     // Update current budget
     setCurrentBudget(updatedBudget);
@@ -333,13 +312,11 @@ const BudgetBoard = () => {
     const updatedBudgets = budgets.map((b) => 
       b.id === currentBudget.id ? updatedBudget : b
     );
-    console.log("Updated budgets list:", updatedBudgets);
     setBudgets(updatedBudgets);
     localStorage.setItem("budgets", JSON.stringify(updatedBudgets));
   };
 
   const handleBudgetSelect = (budget: Budget) => {
-    console.log("Selecting budget:", budget);
     setCurrentBudget(budget);
   };
 
@@ -355,12 +332,10 @@ const BudgetBoard = () => {
           'key': 'dev-test-key'
         }
       });
-      console.log("Accounts fetched from backend:", res.data);
       if (res.data) {
         setAccounts(res.data);
       }      
     } catch (err) {
-      console.error('❌ Error fetching accounts:', err);
     } finally {
       setLoadingAccounts(false);
     }
@@ -448,12 +423,10 @@ const BudgetBoard = () => {
       setTransactions(merged);
       setAnalytics(res.data.analytics);
     } catch (err) {
-      console.error('❌ Error fetching transactions:', err);
     } finally {
       setLoadingTransactions(false);
     }
   };
-  console.log('Accounts List:', accounts.map(a => a.account_id));
 
 
   // Filter transactions based on search and category
@@ -480,7 +453,6 @@ const BudgetBoard = () => {
       // Refresh transactions after categorization
       fetchTransactions(selectedAccount || undefined);
     } catch (err) {
-      console.error('❌ Error categorizing transaction:', err);
     }
   };
 
@@ -622,7 +594,6 @@ const BudgetBoard = () => {
       setLastBackupTime(new Date().toISOString());
       setNotification({ message: "Data backed up successfully", type: "success" });
     } catch (err) {
-      console.error("Failed to backup data:", err);
       setNotification({ message: "Failed to backup data", type: "error" });
     }
   };
@@ -648,7 +619,6 @@ const BudgetBoard = () => {
         setNotification({ message: "Data restored successfully", type: "success" });
       }
     } catch (err) {
-      console.error("Failed to restore data:", err);
       setNotification({ message: "Failed to restore data", type: "error" });
     }
   };
@@ -881,14 +851,18 @@ const BudgetBoard = () => {
           )}
 
           {/* Connect Bank Account and Connected Accounts Section - moved here */}
-          <Box sx={{ mt: 1, mb: 2, width: '100%' }}>
+          <Box sx={{ mt: 2, mb: 1, width: '100%' }}>
             <Button
               variant="outlined"
               onClick={handleConnectBank}
               disabled={plaidLoading}
-              sx={{ mb: 2 }}
+              sx={{ mb: 1 }}
             >
-              {plaidLoading ? <CircularProgress size={20} /> : "Connect Bank Account"}
+              {plaidLoading
+                ? <CircularProgress size={20} />
+                : accounts.length > 0
+                  ? "CONNECT ANOTHER BANK ACCOUNT"
+                  : "Connect Bank Account"}
             </Button>
             <br /><br />
             <Typography variant="h6" gutterBottom>
@@ -936,7 +910,7 @@ const BudgetBoard = () => {
 
           {/* Transactions Section */}
           {selectedAccount && (
-            <Box sx={{ mt: 4, mb: 4, width: '100%' }}>
+            <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 Recent Transactions
               </Typography>

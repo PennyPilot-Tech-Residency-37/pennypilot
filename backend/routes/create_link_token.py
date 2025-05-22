@@ -14,8 +14,8 @@ def setup_create_link_token(app, session):
         input_key = data.get("key")
         user_id = data.get("user_id")
 
-        print("📦 Payload received:", data)
-        print("🔐 user_id:", user_id)
+        app.logger.info("POST /api/create_link_token: payload received")
+
 
         if not validate_key(session, input_key):
             return jsonify({"error": "Invalid API key"}), 403
@@ -35,7 +35,7 @@ def setup_create_link_token(app, session):
             response = client.link_token_create(request_data)
             link_token_data = response.to_dict()
 
-            print("✅ Link token created:", link_token_data.get("link_token"))
+            app.logger.info("Link token successfully created for user_id")
             return jsonify(link_token_data)
 
         except Exception as e:

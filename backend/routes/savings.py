@@ -11,7 +11,9 @@ def setup_savings_routes(app):
         try:
             savings_data = savings_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Savings validation failed: {e.messages}")
+            return jsonify({"error": "Invalid savings data"}), 400
+
         
         new_savings = Savings(amount=savings_data['amount'], goal_name=savings_data['goal_name'], target_amount=savings_data['target_amount'], date=savings_data['date'])
 
@@ -35,7 +37,9 @@ def setup_savings_routes(app):
         try:
             savings_data = savings_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Savings validation failed: {e.messages}")
+            return jsonify({"error": "Invalid savings data"}), 400
+
         
         savings.amount = savings_data['amount']
         savings.goal_name = savings_data['goal_name']

@@ -42,7 +42,6 @@ export default function LoginModal({ open, onClose, intendedPath }: LoginModalPr
       onClose();
       navigate('/dashboard');
     } catch (err: any) {
-      console.error("Login error:", err);
       if (err.code === 'auth/invalid-credential') {
         setError("Invalid email or password");
       } else if (err.code === 'auth/too-many-requests') {
@@ -82,7 +81,6 @@ export default function LoginModal({ open, onClose, intendedPath }: LoginModalPr
       onClose();
       navigate('/dashboard');
     } catch (err: any) {
-      console.error("Signup error:", err);
       if (err.code === 'auth/email-already-in-use') {
         setError("Email is already registered");
       } else if (err.code === 'auth/invalid-email') {

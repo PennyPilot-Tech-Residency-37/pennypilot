@@ -11,7 +11,7 @@ def setup_expense_routes(app):
         try:
             expense_data = expenses_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            return jsonify({"error": "Invalid expense data submitted."}), 400
         
         new_expense = Expenses(amount=expense_data['amount'], category=expense_data['category'], date=expense_data['date'], description=expense_data['description'])
 
@@ -35,7 +35,7 @@ def setup_expense_routes(app):
         try:
             expense_data = expenses_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            return jsonify({"error": "Invalid expense data submitted."}), 400
         
         expense.amount = expense_data['amount']
         expense.category = expense_data['category']

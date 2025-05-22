@@ -220,7 +220,6 @@ export default function Dashboard() {
         dueDate: new Date(goal.dueDate),
       }));
     } catch (e) {
-      console.error("Failed to parse stored goals:", e);
       return [];
     }
   });
@@ -288,7 +287,6 @@ export default function Dashboard() {
             setSelectedBudget(parsed[0]);
           }
         } catch (e) {
-          console.error("Failed to parse stored budgets:", e);
         }
       }
       // Current Budget
@@ -298,7 +296,6 @@ export default function Dashboard() {
           const parsed = JSON.parse(storedCurrent);
           setSelectedBudget(parsed);
         } catch (e) {
-          console.error("Failed to parse current budget:", e);
         }
       }
     };
@@ -321,7 +318,6 @@ export default function Dashboard() {
       try {
         setPlaidAccounts(JSON.parse(storedAccounts));
       } catch (e) {
-        console.error("Failed to parse stored Plaid accounts:", e);
       }
     }
   }, []);
@@ -420,12 +416,9 @@ export default function Dashboard() {
   ] : [];
 
   const handleBudgetSelect = (budget: Budget) => {
-    console.log("Selected budget:", budget); // Debug log
     setSelectedBudget(budget);
   };
 
-  console.log("budgets", budgets);
-  console.log("selectedBudget", selectedBudget);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -445,7 +438,6 @@ export default function Dashboard() {
             setSelectedGoalId(updatedGoals[0].id.toString());
           }
         } catch (e) {
-          console.error("Failed to parse stored goals:", e);
         }
       }
     };
@@ -509,7 +501,9 @@ export default function Dashboard() {
           user_id: currentUser?.uid,
         });
       } catch (err) {
-        console.error("❌ Error exchanging public token:", err);
+        if (process.env.NODE_ENV !== "production") {
+          console.error("Plaid token exchange failed:", err);
+        }
       }
     },
     onExit: (err, metadata) => {
@@ -526,7 +520,6 @@ export default function Dashboard() {
       });
       setLinkToken(res.data.link_token);
     } catch (err) {
-      console.error("Failed to fetch Plaid link token:", err);
       setPlaidLoading(false);
     }
   };
@@ -1025,31 +1018,30 @@ export default function Dashboard() {
             )}
             
             <Button
-              variant="contained"
-              color="primary"
+              variant="outlined"
               onClick={handleConnectBank}
               disabled={plaidLoading}
               sx={{
-                px: 3,
-                py: 1.25,
-                fontSize: { xs: "0.95rem", sm: "1rem" },
-                fontWeight: 700,
+                py: 1,
+                px: 2,
+                fontSize: '0.95rem',
+                mt: 2,
                 borderRadius: 2,
-                boxShadow: "0 4px 16px rgba(25, 118, 210, 0.18)",
-                background: "#fbc02d",
-                color: "#fff",
+                borderWidth: 2,
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                boxShadow: 'none',
+                transition: 'all 0.2s',
                 '&:hover': {
-                  background: "#e6ac00",
-                  color: "#fff",
-                  boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
-                },
-                '&:active': {
-                  boxShadow: "0 2px 8px rgba(25, 118, 210, 0.18)",
-                  background: "#c49000",
+                  backgroundColor: 'primary.main',
+                  color: '#fff',
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                  transform: 'translateY(-2px)',
                 },
               }}
             >
-              Connect Your Bank Account
+              {plaidAccounts.length > 0 ? "CONNECT ANOTHER BANK ACCOUNT" : "Connect Your Bank Account"}
             </Button>
           </Box>
           {plaidError && <Alert severity={usingCache ? "warning" : "error"}>{plaidError}</Alert>}
