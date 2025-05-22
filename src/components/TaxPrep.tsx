@@ -677,94 +677,95 @@ export default function TaxPrep() {
                   }}
                 >
                   <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}>
-                    Summary
+                    Total Tax Deductions:
                   </Typography>
                   <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 700, color: 'success.main' }}>
-                    Total Tax Deductions: ${totalDeductibleSpent.toFixed(2)}
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'flex-start' }}>
-            <Button
-              variant="outlined"
-              startIcon={<FileDownloadIcon />}
-              onClick={handleExport}
-              disabled={!deductibleExpenses.length}
-              sx={{
-                py: 1,
-                px: 2,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontSize: '0.95rem',
-                borderWidth: 2,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                boxShadow: 'none',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: '#fff',
-                  borderColor: 'primary.main',
-                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
-                  transform: 'translateY(-2px)',
-                },
-              }}
-            >
-              Export CSV
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<FileDownloadIcon />}
-              onClick={handleExportWord}
-              disabled={!deductibleExpenses.length}
-              sx={{
-                py: 1,
-                px: 2,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontSize: '0.95rem',
-                borderWidth: 2,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                boxShadow: 'none',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: '#fff',
-                  borderColor: 'primary.main',
-                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
-                  transform: 'translateY(-2px)',
-                },
-              }}
-            >
-              Export Word
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<FileDownloadIcon />}
-              onClick={handleExportPDF}
-              disabled={!deductibleExpenses.length}
-              sx={{
-                py: 1,
-                px: 2,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontSize: '0.95rem',
-                borderWidth: 2,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                boxShadow: 'none',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: '#fff',
-                  borderColor: 'primary.main',
-                  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
-                  transform: 'translateY(-2px)',
-                },
-              }}
-            >
-              Export PDF
-            </Button>
-          </Box>
+                    ${totalDeductibleSpent.toFixed(2)}
+                  </Typography>
+                  <br /><br />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'flex-start' }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<FileDownloadIcon />}
+                      onClick={handleExport}
+                      disabled={!deductibleExpenses.length}
+                      sx={{
+                        py: 1,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontSize: '0.95rem',
+                        borderWidth: 2,
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                        boxShadow: 'none',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          backgroundColor: 'primary.main',
+                          color: '#fff',
+                          borderColor: 'primary.main',
+                          boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<FileDownloadIcon />}
+                      onClick={handleExportWord}
+                      disabled={!deductibleExpenses.length}
+                      sx={{
+                        py: 1,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontSize: '0.95rem',
+                        borderWidth: 2,
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                        boxShadow: 'none',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          backgroundColor: 'primary.main',
+                          color: '#fff',
+                          borderColor: 'primary.main',
+                          boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
+                    >
+                      Export Word
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<FileDownloadIcon />}
+                      onClick={handleExportPDF}
+                      disabled={!deductibleExpenses.length}
+                      sx={{
+                        py: 1,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontSize: '0.95rem',
+                        borderWidth: 2,
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                        boxShadow: 'none',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          backgroundColor: 'primary.main',
+                          color: '#fff',
+                          borderColor: 'primary.main',
+                          boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.2)}`,
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
+                    >
+                      Export PDF
+                    </Button>
+                  </Box>
                 </Card>
               </Grid>
               <Grid item xs={12} md={6}>
@@ -804,13 +805,13 @@ export default function TaxPrep() {
                           ))}
                         </Pie>
                         <Legend
-                          layout="horizontal" // Horizontal layout for legend
-                          align="center" // Center the legend horizontally
-                          verticalAlign="bottom" // Place legend below the chart
+                          layout="horizontal"
+                          align="center"
+                          verticalAlign="bottom"
                           wrapperStyle={{ 
-                            paddingTop: 20, // Add padding to separate legend from pie chart
-                            fontSize: '14px', // Adjust font size for better appearance
-                            lineHeight: '24px', // Ensure proper spacing between legend items
+                            paddingTop: 20,
+                            fontSize: '14px',
+                            lineHeight: '24px',
                             bottom: 5,
                           }}
                         />
@@ -828,7 +829,7 @@ export default function TaxPrep() {
                         />
                       </PieChart>
                     </ResponsiveContainer>
-        </Box>
+                  </Box>
                 </Card>
               </Grid>
             </Grid>
@@ -853,7 +854,7 @@ export default function TaxPrep() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Logged Expenses
-          </Typography>
+                </Typography>
                 <FormControl sx={{ minWidth: 200 }}>
                   <InputLabel>Filter by Category</InputLabel>
                   <Select
@@ -873,9 +874,9 @@ export default function TaxPrep() {
                   <LoadingSpinner />
                 </Box>
               ) : getFilteredAndSortedExpenses().length > 0 ? (
-            <Table>
-              <TableHead>
-                <TableRow>
+                <Table>
+                  <TableHead>
+                    <TableRow>
                       <TableCell>
                         <TableSortLabel
                           active={sortField === 'deductibleAmount'}
@@ -905,17 +906,17 @@ export default function TaxPrep() {
                         </TableSortLabel>
                       </TableCell>
                       <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {getFilteredAndSortedExpenses().map((expense) => (
-                  <TableRow key={expense.id} sx={{ height: 18}}>
+                      <TableRow key={expense.id} sx={{ height: 18}}>
                         <TableCell>${Number(expense.deductibleAmount).toFixed(2)}</TableCell>
-                    <TableCell>{expense.category}</TableCell>
+                        <TableCell>{expense.category}</TableCell>
                         <TableCell>{expense.notes}</TableCell>
                         <TableCell>{new Date(expense.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell>
-                      <IconButton
+                          <IconButton
                             onClick={() => handleEdit(expense)} 
                             color="primary"
                             sx={{
@@ -924,26 +925,26 @@ export default function TaxPrep() {
                                 transform: 'scale(0.9)',
                               },
                             }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
                             onClick={() => handleDelete(expense.id!)} 
-                        color="error"
+                            color="error"
                             sx={{
                               transition: 'all 0.2s ease-in-out',
                               '&:active': {
                                 transform: 'scale(0.9)',
                               },
                             }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
                 <Typography color="textSecondary" sx={{ p: 2, textAlign: 'center' }}>
                   {categoryFilter !== 'all' 
@@ -971,6 +972,6 @@ export default function TaxPrep() {
         />
       </Box>
       <Box sx={{ height: "200px" }} />
-      </Container>
+    </Container>
   );
 }
