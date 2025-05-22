@@ -111,7 +111,14 @@ flask db upgrade
 - Securely authenticate via Firebase
 
 ### Screenshots and Diagrams
-"Insert visuals here"
+## PennyPilot Wireframe
+![Wireframe](./public/images/PennyPilotWireframe.png)
+*Basic Wireframe of PennyPilot Layout*
+![Dashboard](./public/images/PennyPilot1.png)
+*Original idea of Dashboard*
+![Peter Pilot Elite](./public/images/PeterPilotElite.png)
+*Peter Pilot in elite pilot skins*
+
 
 ### Team Structure
 
@@ -148,6 +155,186 @@ Responsibilities:
 - Data transformation and storage
 
 - Database migrations
+
+
+# Frontend Documentation
+---
+## Overview
+
+The PennyPilot frontend is built with React and Material-UI, featuring a modern, responsive design with interactive visualizations and a gamified user experience. The application uses Firebase for authentication and integrates with Plaid for bank account connectivity.
+
+## Tech Stack
+
+- **Framework**: React 18+
+- **UI Library**: Material-UI (MUI)
+- **State Management**: React Context + Local Storage
+- **Authentication**: Firebase Auth
+- **Banking Integration**: Plaid Link
+- **Charts**: Recharts
+- **Animations**: Framer Motion
+- **Routing**: React Router v6
+
+## Core Components
+
+### Navigation & Layout
+- `Navbar.tsx`: Responsive navigation bar with mobile drawer
+- `Footer.tsx`: Site-wide footer with team information and quick links
+- `PilotAvatar.tsx`: Animated pilot character with speech bubble
+
+### Authentication
+- `LoginModal.tsx`: Handles user authentication with email/password
+  - Form validation
+  - Error handling
+  - Secure password requirements
+  - Firebase integration
+
+### Main Features
+
+#### Dashboard (`Dashboard.tsx`)
+- Budget overview with interactive charts
+- Financial goals tracking
+- Bank account integration
+- Recent transactions display
+- Achievement badges system
+
+#### Budget Management (`BudgetSummaryChart.tsx`)
+- Interactive pie charts for income/expenses
+- Budget creation and management
+- Real-time updates
+- Multiple budget support
+
+#### Goals System (`Goals.tsx`)
+- Goal creation and tracking
+- Progress visualization
+- Achievement badges
+- Local storage persistence
+- Backup/restore functionality
+
+#### Tax Preparation (`TaxPrep.tsx`)
+- Deductible expense tracking
+- Category-based organization
+- Export functionality (PDF, Word)
+- Data visualization
+- Sorting and filtering
+
+## Component Architecture
+
+### State Management
+- Uses React Context for global state
+- Local storage for persistence
+- Firebase for user data
+- Plaid for financial data
+
+### Data Flow
+1. User authentication via Firebase
+2. Bank account linking through Plaid
+3. Transaction data processing
+4. Local storage for offline capability
+5. Real-time updates when online
+
+## UI/UX Features
+
+### Responsive Design
+- Mobile-first approach
+- Breakpoint-based layouts
+- Adaptive components
+- Touch-friendly interfaces
+
+### Animations
+- Page transitions
+- Loading states
+- Interactive charts
+- Achievement celebrations
+
+### Theme System
+- Custom Material-UI theme
+- Consistent color palette
+- Dark/light mode support
+- Accessible contrast ratios
+
+## Security Features
+
+- Secure authentication flow
+- Protected routes
+- API key management
+- Data encryption
+- Secure token handling
+
+## Performance Optimizations
+
+- Code splitting
+- Lazy loading
+- Memoization
+- Optimized re-renders
+- Efficient data caching
+
+## Development Guidelines
+
+### Component Structure
+```typescript
+// Example component structure
+interface ComponentProps {
+  // Props interface
+}
+
+const Component: React.FC<ComponentProps> = ({ props }) => {
+  // State management
+  // Event handlers
+  // Render logic
+};
+```
+
+### Styling Conventions
+- Material-UI's `sx` prop for component-specific styles
+- Theme-based styling
+- Responsive design patterns
+- Consistent spacing and typography
+
+### Best Practices
+- TypeScript for type safety
+- Component composition
+- Error boundaries
+- Loading states
+- Error handling
+
+## Testing
+
+- Unit tests for components
+- Integration tests for features
+- End-to-end testing
+- Accessibility testing
+
+## Deployment
+
+- Build optimization
+- Environment configuration
+- CI/CD pipeline integration
+- Performance monitoring
+
+## Contributing
+
+### Frontend Development Workflow
+1. Create feature branch
+2. Implement changes
+3. Add tests
+4. Submit PR
+5. Code review
+6. Merge to main
+
+### Code Style
+- ESLint configuration
+- Prettier formatting
+- TypeScript strict mode
+- Component documentation
+
+## Future Enhancements
+
+- Enhanced mobile experience
+- Additional chart types
+- More gamification features
+- Advanced budget analytics
+- Custom theme support
+
 
 ## Backend Documentation
 ---
