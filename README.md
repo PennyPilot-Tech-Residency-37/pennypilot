@@ -4,6 +4,24 @@ PennyPilot is a gamified financial planning web application designed to help use
 
 ---
 
+## Table of Contents
+- [models.py](#modelspy)
+- [schemas.py](#schemaspy)
+- [key_utils.py](#key_utilspy)
+- [config.py](#configpy)
+- [base.py](#basepy)
+- [app.py](#apppy)
+- [setup_cred.py](#setup_credpy)
+- [plaid_client_config.py](#plaid_client_configpy)
+- [init_keys_table.py](#init_keys_tablepy)
+- [jared_mock_data.py](#jared_mock_datapy)
+- [user.py](#userpy)
+- [transaction.py](#transactionpy)
+- [tax_info.py](#tax_infopy)
+- [savings.py](#savingspy)
+
+---
+
 ## 🚀 Setup & Installation Guide
 
 Follow these steps to get the project running locally for development or testing.
@@ -131,51 +149,7 @@ Responsibilities:
 
 - Database migrations
 
-Cybersecurity
-
-- Responsible for securing both backend and frontend systems
-
-Implements:
-
-- API key validation
-
-- Secure storage of access tokens
-
-- HTTPS and CORS headers
-
-- Performs vulnerability scans and sets up basic monitoring
-
-- Reviews access control and data privacy practices
-
-### Contributors
-
-Alex Alarcon — Frontend
-
-Jennifer Coppick — Frontend
-
-Jaycob Hoffman — Backend
-
-Jared Wilson — Backend
-
-Kevin Jones — Cybersecurity
-
-# PennyPilot Backend Documentation
----
-## Table of Contents
-- [models.py](#modelspy)
-- [schemas.py](#schemaspy)
-- [key_utils.py](#key_utilspy)
-- [config.py](#configpy)
-- [base.py](#basepy)
-- [app.py](#apppy)
-- [setup_cred.py](#setup_credpy)
-- [plaid_client_config.py](#plaid_client_configpy)
-- [init_keys_table.py](#init_keys_tablepy)
-- [jared_mock_data.py](#jared_mock_datapy)
-- [user.py](#userpy)
-- [transaction.py](#transactionpy)
-- [tax_info.py](#tax_infopy)
-- [savings.py](#savingspy)
+## Backend Documentation
 ---
 ## `models.py`
 Defines the ORM models for the app using SQLAlchemy. Includes tables for Users, Linked Accounts, Transactions, Goals, Tax Info, Income, Expenses, Savings, Budget, and Access Tokens.
@@ -274,3 +248,31 @@ RESTful API for Savings resource.
 - Implements create, read, update, delete endpoints.
 - Uses `SavingsSchema` for input validation.
 - Persists data including amount, goal name, target, and date.
+
+Cybersecurity
+
+- Responsible for securing both backend and frontend systems
+
+Implements:
+
+- API key validation
+
+- Secure storage of access tokens
+
+- HTTPS and CORS headers
+
+- Performs vulnerability scans and sets up basic monitoring
+
+- Reviews access control and data privacy practices
+
+### Contributors
+
+Alex Alarcon — Frontend
+
+Jennifer Coppick — Frontend
+
+Jaycob Hoffman — Backend
+
+Jared Wilson — Backend
+
+Kevin Jones — Cybersecurity
