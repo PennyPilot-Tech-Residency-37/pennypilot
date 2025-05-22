@@ -1048,7 +1048,7 @@ export default function Dashboard() {
                 },
               }}
             >
-              Connect Your Bank Account
+              {plaidAccounts.length > 0 ? "CONNECT ANOTHER BANK ACCOUNT" : "Connect Your Bank Account"}
             </Button>
           </Box>
           {plaidError && <Alert severity={usingCache ? "warning" : "error"}>{plaidError}</Alert>}

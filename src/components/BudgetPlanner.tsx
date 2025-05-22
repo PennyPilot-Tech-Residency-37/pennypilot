@@ -881,14 +881,18 @@ const BudgetBoard = () => {
           )}
 
           {/* Connect Bank Account and Connected Accounts Section - moved here */}
-          <Box sx={{ mt: 1, mb: 2, width: '100%' }}>
+          <Box sx={{ mt: 2, mb: 1, width: '100%' }}>
             <Button
               variant="outlined"
               onClick={handleConnectBank}
               disabled={plaidLoading}
-              sx={{ mb: 2 }}
+              sx={{ mb: 1 }}
             >
-              {plaidLoading ? <CircularProgress size={20} /> : "Connect Bank Account"}
+              {plaidLoading
+                ? <CircularProgress size={20} />
+                : accounts.length > 0
+                  ? "CONNECT ANOTHER BANK ACCOUNT"
+                  : "Connect Bank Account"}
             </Button>
             <br /><br />
             <Typography variant="h6" gutterBottom>
@@ -936,7 +940,7 @@ const BudgetBoard = () => {
 
           {/* Transactions Section */}
           {selectedAccount && (
-            <Box sx={{ mt: 4, mb: 4, width: '100%' }}>
+            <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 Recent Transactions
               </Typography>

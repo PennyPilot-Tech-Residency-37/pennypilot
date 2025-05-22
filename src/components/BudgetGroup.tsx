@@ -94,7 +94,11 @@ const SortableItem = ({
   const progress = budgeted > 0 ? Math.min((Math.abs(actual) / budgeted) * 100, 100) : 0;
 
   return (
-    <TableRow ref={setNodeRef} style={style} sx={{ "&:hover": { bgcolor: "action.hover" }, height: "18px" }}>
+    <TableRow ref={setNodeRef} style={style} sx={{ 
+      "&:hover": { bgcolor: "action.hover" }, 
+      height: "18px",
+      "& td": { borderBottom: "none" }
+    }}>
       <TableCell sx={{ width: 24, padding: "0", borderBottom: "none" }}>
         <IconButton
           {...listeners}
@@ -116,7 +120,15 @@ const SortableItem = ({
                 onChange={(e) => onItemChange(index, "name", e.target.value)}
                 size="small"
                 inputProps={{ style: { fontSize: "0.6875rem", padding: "0", lineHeight: "14px" } }}
-                sx={{ "& .MuiInput-root": { padding: 0, height: "14px" } }}
+                sx={{ 
+                  "& .MuiInput-root": { 
+                    padding: 0, 
+                    height: "14px",
+                    "&:before": { borderBottom: "none" },
+                    "&:after": { borderBottom: "none" },
+                    "&:hover:not(.Mui-disabled):before": { borderBottom: "none" }
+                  } 
+                }}
                 aria-label={`${title} name`}
               />
             </TableCell>
@@ -129,7 +141,15 @@ const SortableItem = ({
                 onChange={(e) => onItemChange(index, "amount", e.target.value)}
                 size="small"
                 inputProps={{ style: { fontSize: "0.6875rem", textAlign: "right", padding: "0", lineHeight: "14px" } }}
-                sx={{ "& .MuiInput-root": { padding: 0, height: "14px" } }}
+                sx={{ 
+                  "& .MuiInput-root": { 
+                    padding: 0, 
+                    height: "14px",
+                    "&:before": { borderBottom: "none" },
+                    "&:after": { borderBottom: "none" },
+                    "&:hover:not(.Mui-disabled):before": { borderBottom: "none" }
+                  } 
+                }}
                 aria-label={`Budgeted amount`}
               />
             </TableCell>
@@ -142,7 +162,15 @@ const SortableItem = ({
                 onChange={(e) => onItemChange(index, "activity", e.target.value)}
                 size="small"
                 inputProps={{ style: { fontSize: "0.6875rem", textAlign: "right", padding: "0", lineHeight: "14px" } }}
-                sx={{ "& .MuiInput-root": { padding: 0, height: "14px" } }}
+                sx={{ 
+                  "& .MuiInput-root": { 
+                    padding: 0, 
+                    height: "14px",
+                    "&:before": { borderBottom: "none" },
+                    "&:after": { borderBottom: "none" },
+                    "&:hover:not(.Mui-disabled):before": { borderBottom: "none" }
+                  } 
+                }}
                 aria-label={`Activity amount`}
               />
             </TableCell>
@@ -260,11 +288,30 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions, expanded, onTo
           expandIcon={<ExpandMoreIcon sx={{ fontSize: "18px" }} />}
           sx={{
             bgcolor: "#f5f5f5",
-            minHeight: "18px !important",
-            padding: "0 8px",
+            minHeight: "16px !important",
+            height: "16px !important",
+            padding: "0 4px",
             margin: 0,
-            "&.Mui-expanded": { minHeight: "18px !important" },
-            "& .MuiAccordionSummary-content": { margin: 0 }
+            '&.Mui-expanded': {
+              minHeight: '16px !important',
+              height: '16px !important',
+              padding: '0 4px',
+              margin: 0,
+            },
+            '& .MuiAccordionSummary-content': {
+              margin: 0,
+              minHeight: '16px',
+              height: '16px',
+              alignItems: 'center',
+              padding: 0,
+            },
+            '& .MuiAccordionSummary-content.Mui-expanded': {
+              margin: 0,
+              minHeight: '16px',
+              height: '16px',
+              alignItems: 'center',
+              padding: 0,
+            },
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary", fontSize: "0.875rem", lineHeight: "26px" }}>
