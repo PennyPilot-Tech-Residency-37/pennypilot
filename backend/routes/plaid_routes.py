@@ -50,6 +50,5 @@ def setup_plaid_routes(app):
             })
     
         except Exception as e:
-            print("❌ Exception occurred while fetching transactions:")
-            traceback.print_exc()
-            return jsonify({"error": str(e)}), 500
+            app.logger.error("Error fetching transactions", exc_info=True)
+            return jsonify({"error": "Failed to fetch transactions"}), 500

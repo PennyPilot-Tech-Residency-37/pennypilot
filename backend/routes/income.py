@@ -11,7 +11,8 @@ def setup_income_routes(app):
         try:
             income_data = income_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Income validation failed: {e.messages}")
+            return jsonify({"error": "Invalid income data"}), 400
         
         new_income = Income(amount=income_data['amount'], source=income_data['source'], date=income_data['date'], description=income_data['description'])
 
@@ -35,7 +36,8 @@ def setup_income_routes(app):
         try:
             income_data = income_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Income validation failed: {e.messages}")
+            return jsonify({"error": "Invalid income data"}), 400
         
         income.amount = income_data['amount']
         income.source = income_data['source']

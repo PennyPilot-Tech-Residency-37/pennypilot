@@ -11,7 +11,9 @@ def setup_tax_info_routes(app):
         try:
             tax_info_data = tax_info_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Tax info validation failed: {e.messages}")
+            return jsonify({"error": "Invalid tax info data."}), 400
+
         
         new_tax_info = TaxInfo(income1=tax_info_data['income1'],
                                income2=tax_info_data['income2'],
@@ -43,7 +45,9 @@ def setup_tax_info_routes(app):
         try:
             tax_info_data = tax_info_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Tax info validation failed: {e.messages}")
+            return jsonify({"error": "Invalid tax info data."}), 400
+
         
         tax_info.income1 = tax_info_data['income1']
         tax_info.income2 = tax_info_data['income2']

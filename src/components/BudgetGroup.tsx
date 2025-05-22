@@ -253,7 +253,9 @@ const BudgetGroup = ({ title, items, onItemsChange, transactions, expanded, onTo
         })),
       });
     } catch (err) {
-      console.error("Failed to sync to Notion:", err);
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Failed to sync to Notion:", err);
+      }      
     }
   };
 

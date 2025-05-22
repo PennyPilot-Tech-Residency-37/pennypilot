@@ -27,10 +27,10 @@ def setup_exchange_token(app, session):
             db.session.commit()
 
             return jsonify({
-                "message": "Access token stored successfully",
-                "access_token": access_token
+                "message": "Access token stored successfully"
             })
+
         
         except Exception as e:
-            app.logger.error(f"Exchange token error: {str(e)}")
+            app.logger.error("Plaid token exchange failed", exc_info=True)
             return jsonify({"error": "Plaid token exchange failed."}), 500

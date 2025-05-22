@@ -152,13 +152,11 @@ export default function TaxPrep() {
   useEffect(() => {
     const loadUserData = async () => {
       if (!currentUser) {
-        console.log('No current user, clearing expenses');
         setDeductibleExpenses([]);
         setTotalDeductibleSpent(0);
         return;
       }
 
-      console.log('Loading tax prep data for user:', currentUser.uid);
       let expenses = await getUserData('taxPrep', 'deductibleExpenses');
       if (!expenses || !Array.isArray(expenses) || expenses.length === 0) {
         // Fallback to localStorage if user data is empty
@@ -169,14 +167,11 @@ export default function TaxPrep() {
           } catch {}
         }
       }
-      console.log('Loaded expenses for user', currentUser.uid, ':', expenses);
         if (Array.isArray(expenses)) {
           setDeductibleExpenses(expenses);
           const total = expenses.reduce((sum: number, expense: DeductibleExpense) => sum + expense.deductibleAmount, 0);
           setTotalDeductibleSpent(total);
-        console.log('Set total deductible amount for user', currentUser.uid, ':', total);
       } else {
-        console.log('No valid expenses array found for user', currentUser.uid);
       }
     };
 
@@ -187,7 +182,6 @@ export default function TaxPrep() {
   useEffect(() => {
     return () => {
       if (currentUser) {
-        console.log('Component unmounting, saving data for user:', currentUser.uid);
         setUserData('taxPrep', 'deductibleExpenses', deductibleExpenses);
       }
     };
@@ -248,15 +242,12 @@ export default function TaxPrep() {
       } else {
         updatedExpenses = [...deductibleExpenses, expenseData];
       }
-      console.log('Saving expenses for user:', currentUser.uid);
-      console.log('Updated expenses to save:', updatedExpenses);
       setDeductibleExpenses(updatedExpenses);
       await setUserData('taxPrep', 'deductibleExpenses', updatedExpenses);
       localStorage.setItem('deductibleExpenses', JSON.stringify(updatedExpenses));
       setFormData(initialFormState);
       setSuccess(editingId ? "Expense updated successfully!" : "Expense added successfully!");
     } catch (err) {
-      console.error('Error saving expense:', err);
       setFormData({
         deductibleAmount: amount.toString(),
         category: formData.category,
@@ -282,15 +273,12 @@ export default function TaxPrep() {
   // Update handleDelete to use local storage
   const handleDelete = async (id: string) => {
     try {
-      console.log('Deleting expense', id, 'for user:', currentUser?.uid);
       const updatedExpenses = deductibleExpenses.filter(e => e.id !== id);
-      console.log('Updated expenses after delete:', updatedExpenses);
       setDeductibleExpenses(updatedExpenses);
       await setUserData('taxPrep', 'deductibleExpenses', updatedExpenses);
       localStorage.setItem('deductibleExpenses', JSON.stringify(updatedExpenses));
       setSuccess("Expense deleted successfully!");
     } catch (err) {
-      console.error('Error deleting expense:', err);
       setError("Failed to delete expense. Please try again.");
     }
   };
@@ -464,7 +452,6 @@ export default function TaxPrep() {
       };
       await setUserData('taxPrep', 'expensesBackup', backupData);
     } catch (err) {
-      console.error("Failed to backup expenses:", err);
       setError("Failed to backup expenses");
     }
   };
@@ -482,7 +469,6 @@ export default function TaxPrep() {
         }
       }
     } catch (err) {
-      console.error("Failed to restore expenses:", err);
       setError('Failed to restore expenses');
     }
   };

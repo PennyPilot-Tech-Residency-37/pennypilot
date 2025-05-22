@@ -220,7 +220,6 @@ export default function Dashboard() {
         dueDate: new Date(goal.dueDate),
       }));
     } catch (e) {
-      console.error("Failed to parse stored goals:", e);
       return [];
     }
   });
@@ -288,7 +287,6 @@ export default function Dashboard() {
             setSelectedBudget(parsed[0]);
           }
         } catch (e) {
-          console.error("Failed to parse stored budgets:", e);
         }
       }
       // Current Budget
@@ -298,7 +296,6 @@ export default function Dashboard() {
           const parsed = JSON.parse(storedCurrent);
           setSelectedBudget(parsed);
         } catch (e) {
-          console.error("Failed to parse current budget:", e);
         }
       }
     };
@@ -321,7 +318,6 @@ export default function Dashboard() {
       try {
         setPlaidAccounts(JSON.parse(storedAccounts));
       } catch (e) {
-        console.error("Failed to parse stored Plaid accounts:", e);
       }
     }
   }, []);
@@ -420,12 +416,9 @@ export default function Dashboard() {
   ] : [];
 
   const handleBudgetSelect = (budget: Budget) => {
-    console.log("Selected budget:", budget); // Debug log
     setSelectedBudget(budget);
   };
 
-  console.log("budgets", budgets);
-  console.log("selectedBudget", selectedBudget);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -445,7 +438,6 @@ export default function Dashboard() {
             setSelectedGoalId(updatedGoals[0].id.toString());
           }
         } catch (e) {
-          console.error("Failed to parse stored goals:", e);
         }
       }
     };
@@ -509,7 +501,9 @@ export default function Dashboard() {
           user_id: currentUser?.uid,
         });
       } catch (err) {
-        console.error("❌ Error exchanging public token:", err);
+        if (process.env.NODE_ENV !== "production") {
+          console.error("Plaid token exchange failed:", err);
+        }
       }
     },
     onExit: (err, metadata) => {
@@ -526,7 +520,6 @@ export default function Dashboard() {
       });
       setLinkToken(res.data.link_token);
     } catch (err) {
-      console.error("Failed to fetch Plaid link token:", err);
       setPlaidLoading(false);
     }
   };

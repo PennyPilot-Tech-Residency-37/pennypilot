@@ -37,7 +37,6 @@ const GoalsPage = () => {
         dueDate: new Date(goal.dueDate),
       }));
     } catch (e) {
-      console.error("Failed to parse stored goals:", e);
       return [];
     }
   });
@@ -55,7 +54,6 @@ const GoalsPage = () => {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
       if (e instanceof Error && e.name === 'QuotaExceededError') {
-        console.error("Storage limit reached. Please backup and clear some data.");
       }
     }
   };
@@ -86,7 +84,6 @@ const GoalsPage = () => {
       };
       safeSetLocalStorage("goalsBackup", backupData);
     } catch (err) {
-      console.error("Failed to backup goals:", err);
     }
   };
 
@@ -104,7 +101,6 @@ const GoalsPage = () => {
         setActiveGoalId(backupData.activeGoalId);
       }
     } catch (err) {
-      console.error("Failed to restore goals:", err);
     }
   };
 

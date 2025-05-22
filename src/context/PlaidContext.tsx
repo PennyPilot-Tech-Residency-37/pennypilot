@@ -18,7 +18,6 @@ export const PlaidProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchLinkToken = async () => {
     if (!currentUser?.uid) {
-      console.warn("⚠️ Cannot fetch link token: no currentUser.uid");
       return;
     }
 
@@ -29,7 +28,6 @@ export const PlaidProvider = ({ children }: { children: ReactNode }) => {
       });
       setLinkToken(res.data.link_token);
     } catch (err) {
-      console.error("❌ Error fetching Plaid link token:", err);
     }
   };
 
@@ -43,7 +41,6 @@ export const PlaidProvider = ({ children }: { children: ReactNode }) => {
           user_id: currentUser?.uid,
         });
       } catch (err) {
-        console.error("❌ Error exchanging public token:", err);
       }
     },
     onExit: (err, metadata) => {
