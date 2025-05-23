@@ -1,0 +1,620 @@
+openapi: 3.0.3
+
+info:
+  title: PennyPilot
+  version: 1.0.0
+  description: Personal Finance Advisor App
+
+servers:
+  - url: https://pennypilotapp.com
+    description: Production server
+
+# ─────────────────────────────────────────────────────────────
+# 🔐 SECURITY CONFIGURATION
+# Uncomment and edit the sections below once auth is defined
+
+# components:
+#   securitySchemes:
+#     ApiKeyAuth:
+#       type: apiKey
+#       in: header           # or "query"
+#       name: key            # replace with actual header or query param name
+
+# security:
+#   - ApiKeyAuth: []         # applies to all endpoints globally
+
+# ─────────────────────────────────────────────────────────────
+
+
+
+paths:
+  /users:
+    post:
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created
+
+  /users/{id}:
+    get:
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User retrieved
+
+    put:
+      summary: Update a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User updated
+
+    delete:
+      summary: Delete a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User deleted
+
+  /transactions:
+    post:
+      summary: Create a transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '201':
+          description: Transaction created
+
+  /transactions/{id}:
+    get:
+      summary: Get a transaction by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Transaction retrieved
+
+    put:
+      summary: Update a transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '200':
+          description: Transaction updated
+
+    delete:
+      summary: Delete a transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Transaction deleted
+
+  /income:
+    post:
+      summary: Create income
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Income'
+      responses:
+        '201':
+          description: Income created
+
+  /incomes/{id}:
+    get:
+      summary: Get income by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Income retrieved
+
+    put:
+      summary: Update income
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Income'
+      responses:
+        '200':
+          description: Income updated
+
+    delete:
+      summary: Delete income
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Income deleted
+
+  /budget:
+    post:
+      summary: Create a budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Budget'
+      responses:
+        '201':
+          description: Budget created
+
+  /budgets/{id}:
+    get:
+      summary: Get a budget by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Budget retrieved
+
+    put:
+      summary: Update a budget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Budget'
+      responses:
+        '200':
+          description: Budget updated
+
+    delete:
+      summary: Delete a budget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Budget deleted
+
+  /expense:
+    post:
+      summary: Create an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+      responses:
+        '201':
+          description: Expense created
+
+  /expenses/{id}:
+    get:
+      summary: Get an expense by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Expense retrieved
+
+    put:
+      summary: Update an expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+      responses:
+        '200':
+          description: Expense updated
+
+    delete:
+      summary: Delete an expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Expense deleted
+
+  /goals:
+    post:
+      summary: Create a goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Goal'
+      responses:
+        '201':
+          description: Goal created
+
+  /goals/{id}:
+    get:
+      summary: Get a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Goal retrieved
+
+    put:
+      summary: Update a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Goal'
+      responses:
+        '200':
+          description: Goal updated
+
+    delete:
+      summary: Delete a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Goal deleted
+
+  /savings:
+    post:
+      summary: Create savings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Savings'
+      responses:
+        '201':
+          description: Savings created
+
+  /savings/{id}:
+    get:
+      summary: Get savings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Savings retrieved
+
+    put:
+      summary: Update savings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Savings'
+      responses:
+        '200':
+          description: Savings updated
+
+    delete:
+      summary: Delete savings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Savings deleted
+
+  /tax_info:
+    post:
+      summary: Add tax info
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxInfo'
+      responses:
+        '201':
+          description: Tax info created
+
+  /tax_info/{id}:
+    get:
+      summary: Get tax info
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Tax info retrieved
+
+    put:
+      summary: Update tax info
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxInfo'
+      responses:
+        '200':
+          description: Tax info updated
+
+    delete:
+      summary: Delete tax info
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Tax info deleted
+
+  /api/create_link_token:
+    post:
+      summary: Create a Plaid link token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: Link token created
+
+  /api/exchange_public_token:
+    post:
+      summary: Exchange a Plaid public token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                public_token:
+                  type: string
+                key:
+                  type: string
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: Token exchanged
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+
+    Transaction:
+      type: object
+      properties:
+        transaction_date:
+          type: string
+          format: date
+        transaction_amount:
+          type: number
+
+    Income:
+      type: object
+      properties:
+        amount:
+          type: number
+        source:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+
+    Budget:
+      type: object
+      properties:
+        category:
+          type: string
+        target_amount:
+          type: number
+        month:
+          type: string
+        year:
+          type: integer
+
+    Expense:
+      type: object
+      properties:
+        amount:
+          type: number
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+
+    Goal:
+      type: object
+      properties:
+        target_amount:
+          type: number
+        current_amount:
+          type: number
+        deadline:
+          type: string
+          format: date
+
+    Savings:
+      type: object
+      properties:
+        amount:
+          type: number
+        goal_name:
+          type: string
+        target_amount:
+          type: number
+        date:
+          type: string
+          format: date
+
+    TaxInfo:
+      type: object
+      properties:
+        income1:
+          type: number
+        income2:
+          type: number
+        income3:
+          type: number
+        income4:
+          type: number
+        income5:
+          type: number
+        tax_rate:
+          type: number
+        total_income:
+          type: number
+        tax_to_save:
+          type: number
+        total_saved:
+          type: number
