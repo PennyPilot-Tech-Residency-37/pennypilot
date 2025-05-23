@@ -11,7 +11,8 @@ def setup_goal_routes(app):
         try:
             goal_data = goal_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Goal validation failed: {e.messages}")
+            return jsonify({"error": "Invalid goal data"}), 400
         
         new_goal = Goal(target_amount=goal_data['target_amount'], current_amount=goal_data['current_amount'], deadline=goal_data['deadline'])
 
@@ -35,7 +36,8 @@ def setup_goal_routes(app):
         try:
             goal_data = goal_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Goal validation failed: {e.messages}")
+            return jsonify({"error": "Invalid goal data"}), 400
         
         goal.target_amount = goal_data['target_amount']
         goal.current_amount = goal_data['current_amount']

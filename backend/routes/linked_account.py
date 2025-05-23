@@ -14,7 +14,8 @@ def setup_linked_account_routes(app):
         try:
             linked_account_data = linked_account_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Linked account validation failed: {e.messages}")
+            return jsonify({"error": "Invalid linked account data"}), 400
         
         new_linked_account = LinkedAccount(
             username=linked_account_data['username'],
@@ -38,7 +39,8 @@ def setup_linked_account_routes(app):
         try:
             linked_account_data = linked_account_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Linked account validation failed: {e.messages}")
+            return jsonify({"error": "Invalid linked account data"}), 400
 
         linked_account.username = linked_account_data['username']
         linked_account.password = linked_account_data['password']
@@ -59,7 +61,7 @@ def setup_linked_account_routes(app):
 
     @app.route('/api/linked_accounts/<string:user_id>', methods=['GET'])
     def get_linked_accounts(user_id):
-        print(f"📡 Getting linked accounts for user_id: {user_id}")
+        app.logger.info("Fetching linked accounts for user")
 
         key = request.headers.get("key")
         if not key or not validate_key(db.session, key):
@@ -67,7 +69,7 @@ def setup_linked_account_routes(app):
 
         access_token_entry = AccessToken.query.filter_by(user_id=user_id).first()
         if not access_token_entry:
-            print(f"❌ No access token found for user_id: {user_id}")
+            app.logger.info("Fetching linked accounts for user")
             return jsonify({"error": "Access token not found"}), 404
 
         try:
@@ -79,5 +81,5 @@ def setup_linked_account_routes(app):
             return jsonify(accounts), 200
 
         except Exception as e:
-            print(f"❌ Error fetching accounts: {str(e)}")
+            app.logger.error("Error fetching linked accounts", exc_info=True)
             return jsonify({"error": str(e)}), 500

@@ -47,8 +47,6 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
   onCreateBudget,
   onDeleteBudget,
 }) => {
-  console.log("BudgetSummaryChart received data:", data);
-  console.log("Current budgets:", currentBudgets);
 
   const sum = (arr: { name: string; amount: string }[]) =>
     arr.reduce((acc, val) => acc + (parseFloat(val.amount) || 0), 0);
@@ -58,7 +56,6 @@ const BudgetSummaryChart: React.FC<BudgetSummaryChartProps> = ({
     { name: "Expenses", value: sum(data.expenses) },
     { name: "Savings", value: sum(data.savings) },
   ];
-  console.log("Chart data:", chartData);
 
   // Add state for editing and deleting
   const [editBudgetId, setEditBudgetId] = React.useState<string | null>(null);

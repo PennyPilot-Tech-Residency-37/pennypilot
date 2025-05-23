@@ -11,7 +11,9 @@ def setup_transaction_routes(app):
         try:
             transaction_data = transaction_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Transaction validation failed: {e.messages}")
+            return jsonify({"error": "Invalid transaction data."}), 400
+
         
         new_transaction = Transaction(transaction_date=transaction_data['transaction_date'], transaction_amount=transaction_data['transaction_amount'])
 
@@ -35,7 +37,9 @@ def setup_transaction_routes(app):
         try:
             transaction_data = transaction_schema.load(request.json)
         except ValidationError as e:
-            return jsonify(e.messages), 400
+            app.logger.warning(f"Transaction validation failed: {e.messages}")
+            return jsonify({"error": "Invalid transaction data."}), 400
+
         
         transaction.transaction_date = transaction_data['transaction_date']
         transaction.transaction_amount = transaction_data['transaction_amount']
