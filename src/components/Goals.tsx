@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import GoalsPath from "./GoalsPath";
 import GoalsSidebar from "./GoalsSideBar";
 import CreateGoalModal from "./CreateGoalModal";
+import GoalsToolKit from "./GoalsToolKit";
+import EditGoalModal from "./EditGoalModal";
 import "./Goals.css";
 import { Button } from "@mui/material";
 
@@ -86,7 +88,10 @@ const GoalsPage = () => {
     setGoals((prev) => prev.filter((goal) => goal.id !== id));
   };
   
-
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const handleEditSettings = () => {
+    setIsEditModalOpen(true);
+  };  
   const activeGoal = goals.find((goal) => goal.id === activeGoalId);
 
   return (
@@ -110,12 +115,29 @@ const GoalsPage = () => {
           }}
         />
       )}
+      <EditGoalModal
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        goal={activeGoal ?? null}
+        onSave={(updatedGoal) => {
+          setGoals((prev) =>
+            prev.map((goal) => (goal.id === updatedGoal.id ? updatedGoal : goal))
+          );
+          setIsEditModalOpen(false);
+        }}
+      />
 
       <CreateGoalModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateGoal}
       />
+
+      {activeGoal && (
+        <GoalsToolKit goal={activeGoal} onEditSettings={handleEditSettings} />
+      )}
+
+
     </div>
   );
 };

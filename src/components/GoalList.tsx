@@ -92,15 +92,6 @@ const GoalList: React.FC<Props> = ({
             {goal.name}
           </span>
           <div style={{ display: "flex", gap: "0.25rem" }}>
-            <Tooltip title="Edit">
-              <IconButton
-                size="small"
-                onClick={() => handleEditClick(goal.id, goal.name)}
-                sx={{ color: "#90caf9" }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
             <Tooltip title="Delete">
               <IconButton
                 size="small"

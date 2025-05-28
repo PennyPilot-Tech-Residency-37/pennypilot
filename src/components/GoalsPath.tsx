@@ -41,7 +41,7 @@ const GoalsPath: React.FC<Props> = ({ goalInput, onUpdateGoal }) => {
     const { amount, frequency, startDate, dueDate, stepsCompleted } = goalInput;
     let stepCount: number;
     let incrementFn: (date: Date, i: number) => Date;
-
+  
     switch (frequency) {
       case "daily":
         stepCount = differenceInDays(dueDate, startDate);
@@ -59,19 +59,22 @@ const GoalsPath: React.FC<Props> = ({ goalInput, onUpdateGoal }) => {
         stepCount = 1;
         incrementFn = (date, _) => date;
     }
-
+  
     if (stepCount <= 0) stepCount = 1;
     const stepAmount = amount / stepCount;
-
+    const totalSaved = stepsCompleted.reduce((sum, val) => sum + val, 0);
+    const savedSteps = Math.floor(totalSaved / stepAmount);
+  
     const steps: SteppingStone[] = Array.from({ length: stepCount }, (_, i) => ({
       id: i,
       amount: parseFloat(stepAmount.toFixed(2)),
-      completed: stepsCompleted.includes(i),
+      completed: i < savedSteps,
       dueDate: incrementFn(startDate, i),
     }));
-
+  
     setSteppingStones(steps);
   }, [goalInput]);
+  
 
   const currentIndex = steppingStones.findIndex((s) => !s.completed);
 
@@ -84,7 +87,7 @@ const GoalsPath: React.FC<Props> = ({ goalInput, onUpdateGoal }) => {
   
     const updatedGoal: GoalInput = {
       ...goalInput,
-      stepsCompleted: [...new Set([...goalInput.stepsCompleted, index])],
+      stepsCompleted: [...goalInput.stepsCompleted, steppingStones[index].amount],
     };
   
     const allCompleted = updatedSteps.every((step) => step.completed);
