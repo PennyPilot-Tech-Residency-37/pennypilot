@@ -1,0 +1,40 @@
+.goals-toolkit {
+    position: sticky;
+    top: 100px;
+    right: 0;
+    width: 260px;
+  }
+  
+  .progress-circle {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+  }
+  
+  .progress-ring {
+    transform: rotate(-90deg);
+  }
+  
+  .progress-ring-bar {
+    transition: stroke-dashoffset 0.5s ease;
+  }
+  
+  .progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  
+  .amount {
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .caption {
+    font-size: 0.85rem;
+    color: #666;
+  }
+  
