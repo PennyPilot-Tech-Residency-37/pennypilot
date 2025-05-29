@@ -535,6 +535,17 @@ export default function Dashboard() {
   const deductionLegendItems = groupExpensesByCategory(deductibleExpenses);
   const deductionChartHeight = getDeductionChartHeight(deductionLegendItems.length);
 
+  const handleDeleteAccount = async (accountId: string) => {
+    try {
+      await axios.delete(`/api/linked_accounts/${currentUser?.uid}`, {
+        headers: { key: 'dev-test-key' }
+      });
+      setPlaidAccounts(prevAccounts => prevAccounts.filter(acc => acc.account_id !== accountId));
+    } catch (error) {
+      setError("Failed to remove bank account");
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -1047,12 +1058,21 @@ export default function Dashboard() {
           {plaidError && <Alert severity={usingCache ? "warning" : "error"}>{plaidError}</Alert>}
           <List>
             {plaidAccounts.map((acct: any) => (
-              <ListItem key={acct.id}>
-                <ListItemText
-                  primary={acct.name}
-                  secondary={`Balance: $${acct.balances?.current?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "N/A"}`}
-                />
-              </ListItem>
+              <Box key={acct.account_id} sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle1">
+                    {acct.name} - {acct.balances?.current?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => handleDeleteAccount(acct.account_id)}
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </Box>
             ))}
           </List>
           <Typography variant="subtitle1" sx={{ mt: 2 }}>

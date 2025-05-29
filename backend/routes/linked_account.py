@@ -50,14 +50,25 @@ def setup_linked_account_routes(app):
 
         return jsonify({'message': 'Account updated successfully!'}), 200
 
-    @app.route('/linked_accounts/<int:id>', methods=['DELETE'])
-    def delete_linked_account(id):
-        linked_account = LinkedAccount.query.get_or_404(id)
+    @app.route('/api/linked_accounts/<string:account_id>', methods=['DELETE'])
+    def delete_linked_account(account_id):
+        try:
+            key = request.headers.get("key")
+            if not key or not validate_key(db.session, key):
+                return jsonify({"error": "Unauthorized access"}), 403
 
-        db.session.delete(linked_account)
-        db.session.commit()
+            access_token_entry = AccessToken.query.filter_by(user_id=account_id).first()
+            if not access_token_entry:
+                return jsonify({"error": "Access token not found"}), 404
 
-        return jsonify({'message': 'Account removed successfully!'})
+            db.session.delete(access_token_entry)
+            db.session.commit()
+
+            return jsonify({'message': 'Account removed successfully!'}), 200
+
+        except Exception as e:
+            app.logger.error("Error deleting linked account", exc_info=True)
+            return jsonify({"error": str(e)}), 500
 
     @app.route('/api/linked_accounts/<string:user_id>', methods=['GET'])
     def get_linked_accounts(user_id):
