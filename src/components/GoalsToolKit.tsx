@@ -1,7 +1,6 @@
 import { useState, useEffect} from 'react';
 import { Box, Card, Typography, Button } from '@mui/material';
 import Confetti from 'react-confetti';
-import { useWindowSize } from '@react-hook/window-size';
 
 type GoalInput = {
   id: number;
@@ -27,6 +26,22 @@ const GoalsToolKit: React.FC<GoalsToolKitProps> = ({ goal, onEditSettings }) => 
     const isComplete = totalSaved >= goal.amount;
 
     const [showConfetti, setShowConfetti] = useState(false);
+    const [windowSize, setWindowSize] = useState({
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+          setWindowSize({
+            width: window.innerWidth,
+            height: window.innerHeight
+          });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const celebrationKey = `goal-${goal.id}-celebrated`;
@@ -43,11 +58,8 @@ const GoalsToolKit: React.FC<GoalsToolKitProps> = ({ goal, onEditSettings }) => 
       
           return () => clearTimeout(timeout);
         }
-      }, [isComplete, goal.id]);
+    }, [isComplete, goal.id]);
 
-  
-    const [width, height] = useWindowSize();
-  
     const radius = 60;
     const stroke = 10;
     const normalizedRadius = radius - stroke / 2;
@@ -59,7 +71,7 @@ const GoalsToolKit: React.FC<GoalsToolKitProps> = ({ goal, onEditSettings }) => 
 
     return (
         <>
-        {showConfetti && <Confetti width={width} height={height} />}
+        {showConfetti && <Confetti width={windowSize.width} height={windowSize.height} />}
         <Box sx={{ position: 'sticky', top: 100, width: 280, alignSelf: 'flex-start' }}>
           <Card sx={{ p: 3, boxShadow: 3, borderRadius: 3 }}>
             {/* 💹 Circular progress bar */}

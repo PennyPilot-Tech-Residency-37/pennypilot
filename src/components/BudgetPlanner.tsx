@@ -698,6 +698,17 @@ const BudgetBoard = () => {
     }));
   };
 
+  const handleRemoveBankAccount = async (accountId: string) => {
+    try {
+      await axios.delete(`/api/linked_accounts/${currentUser?.uid}`, {
+        headers: { key: 'dev-test-key' }
+      });
+      setAccounts(accounts.filter(acc => acc.account_id !== accountId));
+    } catch (error) {
+      setNotification({ message: "Failed to remove bank account", type: "error" });
+    }
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="xl" sx={{ mt: 8, mb: 8, position: "relative", px: { xs: 2, sm: 4, md: 6 } }}>
@@ -885,6 +896,19 @@ const BudgetBoard = () => {
                         bgcolor: 'action.hover'
                       }
                     }}
+                    secondaryAction={
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveBankAccount(account.account_id);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    }
                     onClick={() => setSelectedAccount(account.account_id)}
                   >
                     <ListItemText
@@ -901,6 +925,7 @@ const BudgetBoard = () => {
                   </ListItem>
                 ))}
               </List>
+
             ) : (
               <Typography color="text.secondary" gutterBottom>
                 No bank accounts connected
@@ -1086,26 +1111,26 @@ const BudgetBoard = () => {
                             />
                           </TableCell>
                           <TableCell>
-                            <Button
-                              size="small"
-                              onClick={() => categorizeTransaction(transaction.id, 'Income')}
-                              sx={{ mr: 1 }}
-                            >
-                              Income
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => categorizeTransaction(transaction.id, 'Expense')}
-                              sx={{ mr: 1 }}
-                            >
-                              Expense
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => categorizeTransaction(transaction.id, 'Savings')}
-                            >
-                              Savings
-                            </Button>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Button
+                                size="small"
+                                onClick={() => categorizeTransaction(transaction.id, 'Income')}
+                              >
+                                Income
+                              </Button>
+                              <Button
+                                size="small"
+                                onClick={() => categorizeTransaction(transaction.id, 'Expense')}
+                              >
+                                Expense
+                              </Button>
+                              <Button
+                                size="small"
+                                onClick={() => categorizeTransaction(transaction.id, 'Savings')}
+                              >
+                                Savings
+                              </Button>
+                            </Box>
                           </TableCell>
                         </TableRow>
                       ))}

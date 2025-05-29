@@ -7,7 +7,6 @@ import BudgetPlanner from "./components/BudgetPlanner";
 import TaxPrep from "./components/TaxPrep";
 import Goals from "./components/Goals";
 import Footer from "./components/Footer";
-import PageNotFound from "./components/PageNotFound";
 
 import { AuthProvider, useAuth } from "./context/auth";
 import { PlaidProvider } from "./context/PlaidContext";
@@ -21,7 +20,6 @@ function AppRoutes() {
       <Route path="/budget" element={currentUser ? <BudgetPlanner /> : <Navigate to="/" />} />
       <Route path="/tax-prep" element={currentUser ? <TaxPrep /> : <Navigate to="/" />} />
       <Route path="/goals" element={currentUser ? <Goals /> : <Navigate to="/" />} />
-      <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 }
