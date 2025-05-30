@@ -436,6 +436,77 @@ RESTful API for Savings resource.
 - Uses `SavingsSchema` for input validation.
 - Persists data including amount, goal name, target, and date.
 
+## Security Documentation
+---
+
+### Authentication & Authorization
+- **Firebase Authentication**: User authentication is handled through Firebase Auth, providing secure user management and session handling
+- **API Key Validation**: All backend API endpoints are protected with key validation using a secure hashing mechanism
+- **Route Protection**: Protected routes require authenticated users, with automatic redirection to login for unauthenticated access
+
+### Data Protection
+- **Secure Storage**: Sensitive data like access tokens are stored securely in the database with proper encryption
+- **Plaid Integration**: Bank account integration uses Plaid's secure API with proper token management
+- **Environment Variables**: Sensitive configuration is managed through environment variables
+- **Input Validation**: All user inputs are validated using schemas and proper error handling
+
+### API Security
+- **CORS Protection**: Cross-Origin Resource Sharing is properly configured
+- **Request Validation**: All API requests are validated for required parameters and proper formatting
+- **Error Handling**: Secure error handling prevents information leakage
+- **Rate Limiting**: API endpoints are protected against abuse
+
+### Data Privacy
+- **User Data**: User data is stored with proper access controls
+- **Banking Information**: Banking data is handled through Plaid's secure API
+- **Session Management**: Secure session handling with proper timeout mechanisms
+
+### Best Practices
+- **HTTPS**: All communications are encrypted using HTTPS
+- **Secure Headers**: Proper security headers are implemented
+- **Input Sanitization**: All user inputs are sanitized to prevent injection attacks
+- **Error Logging**: Secure error logging without exposing sensitive information
+
+### Development Security
+- **Code Review**: All code changes require review before deployment
+- **Dependency Management**: Regular updates of dependencies to patch security vulnerabilities
+- **Security Testing**: Regular security testing and vulnerability assessments
+
+### Compliance
+- **Data Protection**: Compliant with data protection regulations
+- **Banking Standards**: Follows banking industry security standards through Plaid integration
+- **Privacy Policy**: Clear privacy policy for user data handling
+
+### Security Measures for Bank Integration
+- **Plaid Security**: 
+  - Secure token exchange
+  - Encrypted data transmission
+  - Proper access token management
+  - Secure account linking process
+- **Bank Account Management**:
+  - Secure account deletion
+  - Protected transaction access
+  - Encrypted account information
+
+### Monitoring and Logging
+- **Error Tracking**: Comprehensive error logging
+- **Access Logs**: API access logging
+- **Security Events**: Monitoring of security-related events
+
+### Incident Response
+- **Error Handling**: Proper error handling and user notification
+- **Recovery Procedures**: Clear procedures for security incident recovery
+- **User Communication**: Transparent communication about security issues
+
+### Recommendations for Users
+1. Use strong, unique passwords
+2. Enable two-factor authentication when available
+3. Regularly review connected bank accounts
+4. Monitor account activity
+5. Report any suspicious activity immediately
+6. Keep the application updated
+7. Use secure networks when accessing the application
+
 Cybersecurity
 
 - Responsible for securing both backend and frontend systems
